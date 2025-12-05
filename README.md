@@ -123,6 +123,7 @@ npm run dev
 ### ⚖️ Legal Section Extraction
 
 Automatically identifies applicable sections from:
+
 - Indian Penal Code (IPC)
 - Code of Criminal Procedure (CrPC)
 - Information Technology Act
@@ -140,6 +141,7 @@ Automatically identifies applicable sections from:
 ### 👨‍⚖️ Lawyer Recommendation
 
 Matches users with lawyers based on:
+
 - Case type similarity
 - Past case success rate
 - Experience and specialization
@@ -165,23 +167,26 @@ Matches users with lawyers based on:
 ## 🛠️ Technology Stack
 
 ### Backend
+
 - **Framework**: FastAPI (Python 3.11+)
 - **Database**: PostgreSQL 15
 - **Vector DB**: Qdrant
 - **Cache**: Redis 7
-- **AI/ML**: 
+- **AI/ML**:
   - OpenAI GPT-4 / Google Gemini
   - spaCy for NER
   - sentence-transformers for embeddings
   - DistilBERT for classification
 
 ### Frontend
+
 - **Framework**: Next.js 14 (React 18)
 - **Styling**: Tailwind CSS
 - **State Management**: Zustand + React Query
 - **UI Components**: shadcn/ui
 
 ### Infrastructure
+
 - **Containerization**: Docker + Docker Compose
 - **API Documentation**: OpenAPI/Swagger
 - **Monitoring**: Prometheus + Grafana (optional)
@@ -361,6 +366,7 @@ This platform provides general legal information and AI-assisted analysis. It is
 ## 📞 Support
 
 For issues and questions:
+
 - GitHub Issues: [Create an issue](https://github.com/your-repo/issues)
 - Documentation: See `docs/` folder
 
@@ -380,4 +386,4 @@ For issues and questions:
 
 **Made with ❤️ for India's Legal System**
 
-*Empowering citizens with AI-powered legal assistance*
+_Empowering citizens with AI-powered legal assistance_

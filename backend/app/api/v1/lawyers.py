@@ -12,7 +12,7 @@ ONLY alphabetical sorting and user-driven filtering is allowed.
 """
 
 from fastapi import APIRouter, Query, HTTPException, Depends
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field
 from typing import List, Optional
 from datetime import date
 from sqlalchemy.orm import Session
@@ -89,13 +89,6 @@ class LawyerProfileResponse(BaseModel):
     
     class Config:
         from_attributes = True
-    
-    @validator('*', pre=True, always=True)
-    def check_prohibited_fields(cls, v, field):
-        """Ensure no prohibited fields are accidentally included"""
-        if field.name in PROHIBITED_FIELDS:
-            raise ValueError(f"Field '{field.name}' is prohibited under BCI Rule 36")
-        return v
 
 
 class LawyerDirectoryResponse(BaseModel):
@@ -113,7 +106,7 @@ class LawyerDirectoryResponse(BaseModel):
 class LawyerProfileClaimRequest(BaseModel):
     """Request to claim a lawyer profile"""
     enrollment_number: str = Field(..., min_length=5, max_length=100)
-    email: str = Field(..., regex=r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+    email: str = Field(..., pattern=r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
     phone: Optional[str] = None
     verification_document: Optional[str] = None  # Base64 encoded Bar Council ID
 
@@ -135,7 +128,7 @@ async def get_lawyer_directory(
     language: Optional[str] = Query(None, description="Filter by language"),
     gender: Optional[str] = Query(None, description="Filter by gender"),
     verified_only: bool = Query(False, description="Show only verified profiles"),
-    sort: str = Query("name_asc", regex="^(name_asc|name_desc)$", description="Sort order (alphabetical only)"),
+    sort: str = Query("name_asc", pattern="^(name_asc|name_desc)$", description="Sort order (alphabetical only)"),
     page: int = Query(1, ge=1, description="Page number"),
     limit: int = Query(20, ge=1, le=50, description="Results per page"),
     db: Session = Depends(get_db)

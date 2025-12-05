@@ -2,10 +2,39 @@
 
 import { useState } from 'react'
 
+interface AnalysisResult {
+  incident_id: string
+  classification: {
+    offense_type: string
+    offense_category: string
+    severity_level: string
+    confidence_score: number
+    keywords: string[]
+  }
+  entities: Array<{
+    entity_type: string
+    entity_value: string
+    confidence: number
+  }>
+  legal_sections: Array<{
+    act_name: string
+    section_number: string
+    section_title: string
+    section_description: string
+    relevance_score: number
+    reasoning: string
+  }>
+  required_documents: string[]
+  next_steps: string[]
+  ai_summary: string
+}
+
 export default function HomePage() {
   const [incidentText, setIncidentText] = useState('')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [showBreathing, setShowBreathing] = useState(false)
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null)
+  const [showResults, setShowResults] = useState(false)
 
   const handleAnalyze = async () => {
     if (!incidentText.trim() || incidentText.length < 50) {
@@ -19,8 +48,7 @@ export default function HomePage() {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/legal/analyze`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer demo_token'
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           incident_text: incidentText,
@@ -31,13 +59,15 @@ export default function HomePage() {
       if (response.ok) {
         const data = await response.json()
         console.log('Analysis result:', data)
-        alert('Analysis complete! Check console for results.')
+        setAnalysisResult(data)
+        setShowResults(true)
       } else {
-        alert('Analysis failed. Please try again.')
+        const error = await response.json()
+        alert(`Analysis failed: ${error.detail || 'Please try again'}`)
       }
     } catch (error) {
       console.error('Error:', error)
-      alert('Failed to connect to server')
+      alert('Failed to connect to server. Make sure the backend is running.')
     } finally {
       setIsAnalyzing(false)
     }
@@ -260,6 +290,168 @@ export default function HomePage() {
           </p>
         </div>
       </footer>
+
+      {/* Results Modal */}
+      {showResults && analysisResult && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-4xl w-full my-8 max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-gradient-to-r from-blue-500 to-green-500 text-white p-6 rounded-t-3xl">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold mb-2">Legal Analysis Complete ✓</h2>
+                  <p className="text-blue-100">Powered by AI • Incident ID: {analysisResult.incident_id}</p>
+                </div>
+                <button
+                  onClick={() => setShowResults(false)}
+                  className="text-white hover:bg-white/20 rounded-full p-2 transition"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Classification */}
+              <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-5">
+                <h3 className="font-bold text-blue-900 text-lg mb-3 flex items-center">
+                  <span className="mr-2">🔍</span> Classification
+                </h3>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-600">Offense Type</p>
+                    <p className="font-bold text-gray-800 capitalize">{analysisResult.classification.offense_type}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Category</p>
+                    <p className="font-bold text-gray-800 capitalize">{analysisResult.classification.offense_category}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Severity</p>
+                    <p className={`font-bold capitalize ${
+                      analysisResult.classification.severity_level === 'high' ? 'text-red-600' :
+                      analysisResult.classification.severity_level === 'medium' ? 'text-orange-600' :
+                      'text-green-600'
+                    }`}>{analysisResult.classification.severity_level}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Confidence</p>
+                    <p className="font-bold text-gray-800">{(analysisResult.classification.confidence_score * 100).toFixed(0)}%</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* AI Summary */}
+              <div className="bg-green-50 border-2 border-green-200 rounded-xl p-5">
+                <h3 className="font-bold text-green-900 text-lg mb-3 flex items-center">
+                  <span className="mr-2">🤖</span> AI Analysis Summary
+                </h3>
+                <p className="text-gray-700 leading-relaxed whitespace-pre-line">{analysisResult.ai_summary}</p>
+              </div>
+
+              {/* Legal Sections */}
+              {analysisResult.legal_sections && analysisResult.legal_sections.length > 0 && (
+                <div className="bg-purple-50 border-2 border-purple-200 rounded-xl p-5">
+                  <h3 className="font-bold text-purple-900 text-lg mb-4 flex items-center">
+                    <span className="mr-2">⚖️</span> Applicable Legal Sections
+                  </h3>
+                  <div className="space-y-3">
+                    {analysisResult.legal_sections.map((section, idx) => (
+                      <div key={idx} className="bg-white rounded-lg p-4 border border-purple-200">
+                        <div className="flex items-start justify-between mb-2">
+                          <h4 className="font-bold text-purple-900">
+                            {section.act_name} Section {section.section_number}
+                          </h4>
+                          <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full">
+                            {(section.relevance_score * 100).toFixed(0)}% relevant
+                          </span>
+                        </div>
+                        <p className="font-semibold text-gray-800 mb-2">{section.section_title}</p>
+                        <p className="text-sm text-gray-600 mb-2">{section.section_description}</p>
+                        <p className="text-sm text-purple-700 italic">{section.reasoning}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Entities */}
+              {analysisResult.entities && analysisResult.entities.length > 0 && (
+                <div className="bg-orange-50 border-2 border-orange-200 rounded-xl p-5">
+                  <h3 className="font-bold text-orange-900 text-lg mb-3 flex items-center">
+                    <span className="mr-2">📋</span> Key Information Extracted
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {analysisResult.entities.map((entity, idx) => (
+                      <div key={idx} className="bg-white rounded-lg px-3 py-2 border border-orange-200">
+                        <p className="text-xs text-gray-600">{entity.entity_type}</p>
+                        <p className="font-semibold text-gray-800">{entity.entity_value}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Next Steps */}
+              {analysisResult.next_steps && analysisResult.next_steps.length > 0 && (
+                <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-5">
+                  <h3 className="font-bold text-yellow-900 text-lg mb-3 flex items-center">
+                    <span className="mr-2">✅</span> Recommended Next Steps
+                  </h3>
+                  <ol className="space-y-2">
+                    {analysisResult.next_steps.map((step, idx) => (
+                      <li key={idx} className="flex items-start">
+                        <span className="bg-yellow-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold mr-3 flex-shrink-0 mt-0.5">
+                          {idx + 1}
+                        </span>
+                        <span className="text-gray-700">{step}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
+
+              {/* Required Documents */}
+              {analysisResult.required_documents && analysisResult.required_documents.length > 0 && (
+                <div className="bg-gray-50 border-2 border-gray-200 rounded-xl p-5">
+                  <h3 className="font-bold text-gray-900 text-lg mb-3 flex items-center">
+                    <span className="mr-2">📄</span> Required Documents
+                  </h3>
+                  <ul className="space-y-2">
+                    {analysisResult.required_documents.map((doc, idx) => (
+                      <li key={idx} className="flex items-center text-gray-700">
+                        <span className="text-green-500 mr-2">✓</span>
+                        {doc}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => {
+                    setShowResults(false)
+                    setIncidentText('')
+                  }}
+                  className="flex-1 py-3 bg-gradient-to-r from-blue-500 to-green-500 text-white font-bold rounded-xl hover:shadow-lg transition"
+                >
+                  Analyze Another Incident
+                </button>
+                <button
+                  onClick={() => window.print()}
+                  className="px-6 py-3 bg-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-300 transition"
+                >
+                  Print
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -10,6 +10,21 @@ from app.config import settings
 from app.ai.legal_extraction import LegalSection, IncidentClassification
 from app.core.exceptions import AIProcessingError
 
+# Import customizable prompts
+try:
+    from app.ai.prompts_config import (
+        LEGAL_ANALYSIS_PROMPT,
+        SIMPLE_ANALYSIS_PROMPT,
+        CUSTOM_PROMPT_TEMPLATE,
+        ACTIVE_PROMPT,
+        FIR_DRAFT_PROMPT,
+        SECTION_REFINEMENT_PROMPT
+    )
+except ImportError:
+    # Fallback if prompts_config doesn't exist
+    LEGAL_ANALYSIS_PROMPT = None
+    ACTIVE_PROMPT = "DEFAULT"
+
 logger = logging.getLogger(__name__)
 
 
@@ -206,13 +221,37 @@ Focus on the most relevant 3-5 sections."""
         self,
         incident_text: str,
         classification: IncidentClassification,
-        legal_sections: List[LegalSection]
+        location: str = None,
+        incident_date: str = None
     ) -> str:
-        """Create prompt for summary generation"""
-        sections_text = "\n".join([
-            f"- {s.act_name} Section {s.section_number}: {s.section_title}"
-            for s in legal_sections[:5]
-        ])
+        """Create prompt for summary generation using customizable template"""
+        
+        # Use custom prompt if available
+        if ACTIVE_PROMPT == "LEGAL_ANALYSIS_PROMPT" and LEGAL_ANALYSIS_PROMPT:
+            return LEGAL_ANALYSIS_PROMPT.format(
+                incident_text=incident_text,
+                location=location or "Not specified",
+                incident_date=incident_date or "Not specified",
+                offense_type=classification.offense_type,
+                offense_category=classification.offense_category,
+                severity=classification.severity_level
+            )
+        elif ACTIVE_PROMPT == "SIMPLE_ANALYSIS_PROMPT" and SIMPLE_ANALYSIS_PROMPT:
+            return SIMPLE_ANALYSIS_PROMPT.format(
+                incident_text=incident_text
+            )
+        elif ACTIVE_PROMPT == "CUSTOM_PROMPT_TEMPLATE" and CUSTOM_PROMPT_TEMPLATE:
+            return CUSTOM_PROMPT_TEMPLATE.format(
+                incident_text=incident_text,
+                location=location or "Not specified",
+                incident_date=incident_date or "Not specified",
+                offense_type=classification.offense_type,
+                offense_category=classification.offense_category,
+                severity=classification.severity_level
+            )
+        
+        # Default fallback prompt
+        sections_text = "Analysis in progress"
         
         return f"""Provide a brief legal analysis summary (2-3 paragraphs) for this incident:
 
@@ -221,9 +260,6 @@ Incident: {incident_text}
 Offense Type: {classification.offense_type}
 Category: {classification.offense_category}
 Severity: {classification.severity_level}
-
-Applicable Legal Sections:
-{sections_text}
 
 Write a clear, professional summary explaining:
 1. What legal violations occurred

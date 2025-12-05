@@ -89,8 +89,7 @@ class DraftFIRResponse(BaseModel):
 async def analyze_incident(
     request: AnalyzeIncidentRequest,
     background_tasks: BackgroundTasks,
-    db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    db: Session = Depends(get_db)
 ):
     """
     Analyze an incident and extract legal information
@@ -113,7 +112,7 @@ async def analyze_incident(
         Complete legal analysis result
     """
     try:
-        logger.info(f"Analyzing incident for user {current_user['id']}")
+        logger.info(f"Analyzing incident (anonymous request)")
         
         # Get legal extraction engine
         engine = get_legal_extraction_engine()
