@@ -2,50 +2,56 @@
 @tailwind components;
 @tailwind utilities;
 
+/* eCourts-inspired Government Theme - Calming & Trustworthy */
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --radius: 0.5rem;
-  }
+    /* Background - Clean white and light blues */
+    --background: 210 40% 98%;
+    --foreground: 215 25% 27%;
 
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    /* Card - Subtle elevation */
+    --card: 0 0% 100%;
+    --card-foreground: 215 25% 27%;
+
+    /* Primary - Government blue (eCourts inspired) */
+    --primary: 211 100% 43%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary - Soft blue-gray */
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 215 25% 27%;
+
+    /* Accent - Warm orange for CTAs (eCourts style) */
+    --accent: 24 100% 50%;
+    --accent-foreground: 0 0% 100%;
+
+    /* Muted - Subtle backgrounds */
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+
+    /* Success - Calming green */
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+
+    /* Warning - Gentle amber */
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    /* Destructive - Soft red */
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Borders and inputs */
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 211 100% 43%;
+    --radius: 0.5rem;
+
+    /* Custom eCourts colors */
+    --ecourts-blue: 211 100% 43%;
+    --ecourts-orange: 24 100% 50%;
+    --ecourts-light-blue: 210 100% 97%;
+    --trust-green: 142 71% 45%;
   }
 }
 
@@ -53,7 +59,63 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  }
+
+  /* Smooth scrolling for better UX */
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Custom utility classes for eCourts theme */
+@layer utilities {
+  .bg-ecourts-blue {
+    background-color: hsl(var(--ecourts-blue));
+  }
+
+  .bg-ecourts-orange {
+    background-color: hsl(var(--ecourts-orange));
+  }
+
+  .bg-ecourts-light {
+    background-color: hsl(var(--ecourts-light-blue));
+  }
+
+  .text-ecourts-blue {
+    color: hsl(var(--ecourts-blue));
+  }
+
+  .text-trust-green {
+    color: hsl(var(--trust-green));
+  }
+
+  .border-ecourts-blue {
+    border-color: hsl(var(--ecourts-blue));
+  }
+
+  /* Calming animations */
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-in;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Accessibility - focus states */
+  .focus-visible-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
   }
 }

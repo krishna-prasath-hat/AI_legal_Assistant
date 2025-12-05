@@ -1,26 +1,4 @@
 services:
-  # PostgreSQL Database
-  postgres:
-    image: postgres:15-alpine
-    container_name: legal_postgres
-    environment:
-      POSTGRES_DB: legal_assistance_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: legal_pass_2024
-      POSTGRES_HOST_AUTH_METHOD: trust
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - legal_network
-
   # Redis Cache
   redis:
     image: redis:7-alpine
@@ -61,7 +39,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql://postgres:legal_pass_2024@postgres:5432/legal_assistance_db
+      - DATABASE_URL=sqlite:///./data/legal_assistant.db
       - REDIS_URL=redis://redis:6379/0
       - QDRANT_URL=http://qdrant:6333
       - SECRET_KEY=your-secret-key-change-in-production-min-32-chars
@@ -75,13 +53,12 @@ services:
       - GOOGLE_AI_API_KEY=${GOOGLE_AI_API_KEY:-}
       - GOOGLE_MAPS_API_KEY=${GOOGLE_MAPS_API_KEY:-}
     depends_on:
-      postgres:
-        condition: service_healthy
       redis:
         condition: service_healthy
     volumes:
       - ./backend:/app
       - ./uploads:/app/uploads
+      - ./data:/app/data
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
@@ -117,8 +94,6 @@ networks:
     driver: bridge
 
 volumes:
-  postgres_data:
-    driver: local
   redis_data:
     driver: local
   qdrant_data:

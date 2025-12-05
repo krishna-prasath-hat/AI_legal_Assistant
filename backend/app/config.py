@@ -15,8 +15,8 @@ class Settings(BaseSettings):
     DEBUG: bool = False
     ENVIRONMENT: str = "production"
     
-    # Database
-    DATABASE_URL: str
+    # Database - SQLite
+    DATABASE_URL: str = "sqlite:///./data/legal_assistant.db"
     DATABASE_POOL_SIZE: int = 20
     DATABASE_MAX_OVERFLOW: int = 10
     
