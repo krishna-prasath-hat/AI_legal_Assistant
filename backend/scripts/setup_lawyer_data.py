@@ -58,7 +58,15 @@ def import_advocates(csv_file):
     print(f"\n📊 Reading {csv_file}...")
     
     try:
-        df = pd.read_csv(csv_file)
+        try:
+            df = pd.read_csv(csv_file)
+        except UnicodeDecodeError:
+            try:
+                print("⚠️ UTF-8 failed, trying cp1252...")
+                df = pd.read_csv(csv_file, encoding='cp1252')
+            except UnicodeDecodeError:
+                print("⚠️ cp1252 failed, trying latin1...")
+                df = pd.read_csv(csv_file, encoding='latin1')
     except Exception as e:
         print(f"❌ Error reading CSV: {e}")
         return False
@@ -75,6 +83,7 @@ def import_advocates(csv_file):
         return False
     
     # Create table if not exists (SQLite syntax)
+    conn.execute(text("DROP TABLE IF EXISTS lawyer_profiles"))
     conn.execute(text("""
         CREATE TABLE IF NOT EXISTS lawyer_profiles (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -112,14 +121,14 @@ def import_advocates(csv_file):
     for idx, row in df.iterrows():
         try:
             # Extract data (adjust column names based on actual CSV)
-            name = str(row.get('Name', row.get('Advocate Name', ''))).strip()
-            enrollment = str(row.get('Enrollment Number', row.get('Enrolment Number', ''))).strip()
-            state = str(row.get('State', '')).strip()
-            district = str(row.get('District', row.get('City', ''))).strip()
-            address = str(row.get('Address', '')).strip()
+            name = str(row.get('ADVOCATE NAME', row.get('Name', ''))).strip()
+            enrollment = str(row.get('ADVOCATE ID NUMBER', row.get('Enrollment Number', ''))).strip()
+            state = str(row.get('State', 'Tamil Nadu')).strip()  # Default to TN if missing, or generic
+            district = str(row.get('PLACE', row.get('District', ''))).strip()
+            address = str(row.get('ADDRESS', row.get('Address', ''))).strip()
             
             # Parse enrollment date
-            date_str = str(row.get('Date of Enrollment', row.get('Enrollment Date', '')))
+            date_str = str(row.get('DATE OF ENROLMENT', row.get('Date of Enrollment', '')))
             try:
                 enrollment_date = pd.to_datetime(date_str, errors='coerce')
                 if pd.isna(enrollment_date):

@@ -11,57 +11,124 @@ INSTRUCTIONS:
 # MAIN ANALYSIS PROMPT - This is sent to ChatGPT for incident analysis
 # ============================================================================
 
-LEGAL_ANALYSIS_PROMPT = """You are an expert Indian legal advisor. Analyze this incident and provide detailed legal guidance.
+# LEGAL_ANALYSIS_PROMPT = """You are an expert Indian legal advisor with deep knowledge of IPC, CrPC, IT Act, Consumer Protection Act, and other Indian laws.
 
-INCIDENT DESCRIPTION:
+# INCIDENT DESCRIPTION:
+# {incident_text}
+
+# LOCATION: {location}
+# DATE: {incident_date}
+
+# YOUR TASK:
+# Analyze this SPECIFIC incident carefully and provide RELEVANT legal guidance. DO NOT give generic responses.
+
+# 1. INCIDENT CLASSIFICATION
+#    Based on the ACTUAL incident described:
+#    - Offense Type: (Be specific - e.g., "cyber fraud via phishing", "document forgery", "theft of mobile device")
+#    - Category: (criminal/civil/consumer/family/cyber)
+#    - Severity: (low/medium/high based on the actual incident)
+#    - Confidence: (your confidence in this classification)
+
+# 2. APPLICABLE LAWS (ONLY RELEVANT ONES)
+#    List ONLY the laws that ACTUALLY apply to THIS specific incident:
+#    - Act Name and Section Number
+#    - Section Title
+#    - Why THIS section applies to THIS incident (be specific)
+#    - Relevance score (how relevant to this case)
+   
+#    Examples:
+#    - For cyber fraud: IT Act Section 66D (Cheating by personation using computer resource)
+#    - For document issues: IPC Section 420 (Cheating), Section 467 (Forgery of valuable security)
+#    - For theft: IPC Section 378 (Theft), Section 379 (Punishment for theft)
+
+# 3. LEGAL SUMMARY
+#    Write 2-3 paragraphs explaining:
+#    - What SPECIFICALLY happened in this incident
+#    - Which SPECIFIC laws apply and WHY they apply to THIS case
+#    - Potential consequences for THIS type of incident
+#    - Recommended actions for THIS specific situation
+
+# 4. NEXT STEPS (SPECIFIC TO THIS INCIDENT)
+#    List 5-7 SPECIFIC action items for THIS incident:
+#    - First immediate action
+#    - Where to file complaint (specific authority)
+#    - What evidence to collect for THIS case
+#    - Legal remedies available for THIS incident
+#    - Timeline expectations
+   
+#    DO NOT include generic steps. Make them specific to the incident.
+
+# 5. REQUIRED DOCUMENTS (ONLY RELEVANT ONES)
+#    List ONLY documents needed for THIS specific type of incident:
+#    - For cyber fraud: Bank statements, transaction records, screenshots, email/SMS evidence
+#    - For document issues: Original documents, copies, affidavits
+#    - For theft: FIR copy, purchase receipts, photos
+#    - For consumer issues: Bills, warranty cards, correspondence
+   
+#    DO NOT list irrelevant documents like "Medical reports" for a document fraud case.
+
+# 6. KEY INFORMATION
+#    Extract SPECIFIC details from the incident:
+#    - Names mentioned
+#    - Dates and times
+#    - Amounts of money (if any)
+#    - Phone numbers/emails (if any)
+#    - Locations
+#    - Any other relevant details
+
+# 7. FOLLOW-UP ACTIONS
+#    Suggest SPECIFIC follow-ups for THIS incident:
+#    - What to do after filing complaint
+#    - How to track progress
+#    - When to expect response
+#    - Additional legal remedies available
+
+# 8. DRAFT COMPLAINT (if applicable)
+#    Provide a BRIEF draft complaint text specific to this incident that the user can use.
+
+# IMPORTANT RULES:
+# - Be SPECIFIC to the actual incident described
+# - DO NOT give generic advice
+# - ONLY suggest relevant laws and documents
+# - Make recommendations actionable and practical
+# - Use simple, clear language
+# - Focus on Indian laws only
+# - If the incident is unclear, ask for clarification rather than guessing
+
+# EXAMPLE OF GOOD vs BAD:
+# BAD: "File a complaint with the magistrate" (too generic)
+# GOOD: "File a cyber crime complaint at cybercrime.gov.in portal within 24 hours, including all transaction screenshots"
+
+# BAD: "Medical reports (if applicable)" (not relevant to document fraud)
+# GOOD: "Certified copies of the original documents and affidavit stating the loss"
+# """
+
+LEGAL_ANALYSIS_PROMPT = """
+You are a legal analysis engine for Indian law.
+
+Incident Description:
 {incident_text}
 
-LOCATION: {location}
-DATE: {incident_date}
-
-YOUR TASK:
-Provide a comprehensive legal analysis in the following format:
-
-1. INCIDENT CLASSIFICATION
-   - Offense Type: (e.g., cybercrime, theft, fraud, assault)
-   - Category: (criminal/civil/consumer/family)
-   - Severity: (low/medium/high)
-   - Confidence: (percentage)
-
-2. APPLICABLE LAWS
-   For each relevant law section, provide:
-   - Act Name (IPC/CrPC/IT Act/Consumer Act/etc.)
-   - Section Number
-   - Section Title
-   - Why it applies to this case
-   - Relevance score (0-100%)
-
-3. LEGAL SUMMARY
-   Write 2-3 paragraphs explaining:
-   - What legal violations occurred
-   - Which laws apply and why
-   - Potential consequences
-   - Recommended actions
-
-4. NEXT STEPS
-   List 5-7 specific action items the person should take
-
-5. REQUIRED DOCUMENTS
-   List all documents needed to file a complaint
-
-6. KEY INFORMATION
-   Extract important details like:
-   - Names mentioned
-   - Dates and times
-   - Amounts of money
-   - Phone numbers
-   - Locations
-
-IMPORTANT:
-- Use simple, clear language
-- Be specific and actionable
-- Focus on Indian laws only
-- Provide practical guidance
+Your Task:
+- Identify the correct IPC / CrPC / IT Act sections applicable to the incident above.
+- For EACH section, return the following fields:
+ 
+{
+  "section": "<section number>",
+  "act": "<IPC / CrPC / IT Act etc>",
+  "title": "<name of the offence>",
+  "description": "<short explanation>",
+  "is_bailable": true/false,
+  "is_cognizable": true/false,
+  "punishment": "<years/fine>",
+  "court_fees": "<exact or estimated fees>",
+  "compoundable": true/false
+}
+ 
+Rules:
+- Always output JSON list (array).
+- No text outside JSON.
+- If multiple sections apply, list all of them.
 """
 
 # ============================================================================

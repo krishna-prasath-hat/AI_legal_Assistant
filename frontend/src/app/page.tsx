@@ -74,33 +74,32 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-green-50 to-blue-50">
-      {/* Calming Header */}
-      <header className="bg-white/90 backdrop-blur-sm border-b border-blue-100 sticky top-0 z-50 shadow-sm">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
+      {/* Header */}
+      <header className="bg-white backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-green-500 rounded-xl flex items-center justify-center shadow-md">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-xl flex items-center justify-center shadow-lg">
                 <span className="text-white font-bold text-2xl">⚖️</span>
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-800">JustiFly</h1>
-                <p className="text-xs text-gray-500">We're here to help</p>
+                <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">JustiFly</h1>
+                <p className="text-xs text-gray-600">Justice Takes Flight</p>
               </div>
             </div>
             <nav className="hidden md:flex space-x-6">
               <a href="/" className="text-blue-600 font-semibold">Home</a>
-              <a href="/lawyers" className="text-gray-600 hover:text-blue-600 transition">Find Lawyers</a>
-              <a href="/cases" className="text-gray-600 hover:text-blue-600 transition">My Cases</a>
-              <a href="/login" className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">Login</a>
+              <a href="/lawyers" className="text-gray-700 hover:text-blue-600 transition">Lawyer Directory</a>
+              <a href="/cases" className="text-gray-700 hover:text-blue-600 transition">My Cases</a>
             </nav>
           </div>
         </div>
       </header>
 
-      {/* Breathing Exercise Banner (if stressed) */}
+      {/* Breathing Exercise Banner */}
       {showBreathing && (
-        <div className="bg-green-100 border-b-2 border-green-300">
+        <div className="bg-green-50 border-b-2 border-green-200">
           <div className="container mx-auto px-4 py-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
@@ -212,7 +211,7 @@ export default function HomePage() {
             <button
               onClick={handleAnalyze}
               disabled={isAnalyzing || incidentText.length < 50}
-              className="w-full mt-6 py-5 bg-gradient-to-r from-blue-500 to-green-500 text-white font-bold text-xl rounded-xl hover:shadow-2xl hover:scale-105 transform transition disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:hover:shadow-none"
+              className="w-full mt-6 py-5 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold text-xl rounded-xl hover:shadow-2xl hover:scale-105 transform transition disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:hover:shadow-none"
             >
               {isAnalyzing ? (
                 <span className="flex items-center justify-center space-x-3">
@@ -262,14 +261,14 @@ export default function HomePage() {
                 <p className="text-gray-600">Tell us what happened in simple words</p>
               </div>
               <div className="text-center">
-                <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <div className="w-20 h-20 bg-cyan-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
                   <span className="text-white text-3xl font-bold">2</span>
                 </div>
                 <h4 className="font-bold text-gray-800 mb-2 text-lg">Understand</h4>
                 <p className="text-gray-600">Get clear legal guidance instantly</p>
               </div>
               <div className="text-center">
-                <div className="w-20 h-20 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <div className="w-20 h-20 bg-indigo-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
                   <span className="text-white text-3xl font-bold">3</span>
                 </div>
                 <h4 className="font-bold text-gray-800 mb-2 text-lg">Act</h4>
@@ -296,7 +295,7 @@ export default function HomePage() {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-3xl shadow-2xl max-w-4xl w-full my-8 max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
-            <div className="sticky top-0 bg-gradient-to-r from-blue-500 to-green-500 text-white p-6 rounded-t-3xl">
+            <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-cyan-600 text-white p-6 rounded-t-3xl">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-2xl font-bold mb-2">Legal Analysis Complete ✓</h2>
@@ -431,15 +430,60 @@ export default function HomePage() {
               )}
 
               {/* Action Buttons */}
-              <div className="flex gap-3 pt-4">
+              <div className="flex flex-wrap gap-3 pt-4">
                 <button
                   onClick={() => {
                     setShowResults(false)
                     setIncidentText('')
                   }}
-                  className="flex-1 py-3 bg-gradient-to-r from-blue-500 to-green-500 text-white font-bold rounded-xl hover:shadow-lg transition"
+                  className="flex-1 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold rounded-xl hover:shadow-lg transition"
                 >
                   Analyze Another Incident
+                </button>
+                <button
+                  onClick={async () => {
+                    // Generate complaint draft
+                    const complaint = `COMPLAINT
+
+To,
+The Officer In-Charge,
+[Police Station Name]
+[Location]
+
+Subject: Complaint regarding ${analysisResult.classification.offense_type}
+
+Sir/Madam,
+
+I, [Your Name], resident of [Your Address], hereby lodge a complaint regarding the following incident:
+
+INCIDENT DETAILS:
+${incidentText}
+
+Date of Incident: ${analysisResult.entities.find((e: any) => e.entity_type === 'DATE')?.entity_value || 'As mentioned above'}
+Location: ${analysisResult.entities.find((e: any) => e.entity_type === 'LOCATION')?.entity_value || 'As mentioned above'}
+
+APPLICABLE LAWS:
+${analysisResult.legal_sections.slice(0, 3).map((s: any) => `- ${s.act_name} Section ${s.section_number}: ${s.section_title}`).join('\n')}
+
+I request you to kindly take necessary action and register an FIR under the applicable sections of law.
+
+Thanking you,
+
+[Your Signature]
+[Your Name]
+[Contact Number]
+[Date]
+
+---
+Note: This is a draft. Please customize with your details before submission.
+`
+                    // Copy to clipboard
+                    navigator.clipboard.writeText(complaint)
+                    alert('Complaint draft copied to clipboard! You can now paste and customize it.')
+                  }}
+                  className="flex-1 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold rounded-xl hover:shadow-lg transition"
+                >
+                  📝 Generate Complaint Draft
                 </button>
                 <button
                   onClick={() => window.print()}

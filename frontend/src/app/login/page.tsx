@@ -21,7 +21,7 @@ export default function LoginPage() {
     setError('')
 
     try {
-      const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register'
+      const endpoint = isLogin ? '/api/v1/auth/login' : '/api/v1/auth/register'
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`, {
         method: 'POST',
         headers: {
@@ -65,7 +65,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex items-center justify-center px-4">
       {/* Background */}
       <div className="absolute inset-0 overflow-hidden opacity-10">
         <div className="absolute top-20 left-10 text-9xl animate-pulse">⚖️</div>
@@ -74,44 +74,43 @@ export default function LoginPage() {
 
       {/* Login/Signup Card */}
       <div className="relative z-10 w-full max-w-md">
-        <div className="bg-white/10 backdrop-blur-md rounded-2xl shadow-2xl p-8 border border-white/20">
+        <div className="bg-white border border-gray-200 rounded-2xl shadow-2xl p-8">
           {/* Logo */}
           <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">
               <span className="text-white font-bold text-3xl">⚖️</span>
             </div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-amber-200 via-yellow-200 to-amber-300 bg-clip-text text-transparent">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
               JustiFly
             </h1>
-            <p className="text-gray-400 text-sm mt-2">Justice Takes Flight</p>
+            <p className="text-gray-600 text-sm mt-2">Justice Takes Flight</p>
           </div>
 
           {/* Toggle Login/Signup */}
-          <div className="flex mb-6 bg-white/5 rounded-lg p-1">
+          <div className="flex mb-6 bg-gray-100 rounded-lg p-1">
             <button
               onClick={() => setIsLogin(true)}
-              className={`flex-1 py-2 rounded-lg font-semibold transition ${isLogin
-                ? 'bg-gradient-to-r from-amber-400 to-orange-500 text-white'
-                : 'text-gray-400 hover:text-white'
+              className={`flex-1 py-2 rounded-md font-semibold transition ${isLogin
+                ? 'bg-white text-blue-600 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
                 }`}
             >
               Login
             </button>
             <button
               onClick={() => setIsLogin(false)}
-              className={`flex-1 py-2 rounded-lg font-semibold transition ${!isLogin
-                ? 'bg-gradient-to-r from-amber-400 to-orange-500 text-white'
-                : 'text-gray-400 hover:text-white'
+              className={`flex-1 py-2 rounded-md font-semibold transition ${!isLogin
+                ? 'bg-white text-blue-600 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
                 }`}
             >
               Sign Up
             </button>
           </div>
 
-          {/* Error Message */}
           {error && (
-            <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg">
-              <p className="text-red-200 text-sm">{error}</p>
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm text-center">
+              {error}
             </div>
           )}
 
@@ -119,12 +118,12 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && (
               <div>
-                <label className="block text-sm font-medium text-amber-200 mb-2">Full Name</label>
+                <label className="block text-sm font-medium text-gray-900 mb-2">Full Name</label>
                 <input
                   type="text"
                   required
-                  className="w-full p-3 bg-white/10 border-2 border-white/20 rounded-lg focus:border-amber-400 focus:outline-none text-white placeholder-gray-400"
-                  placeholder="Enter your full name"
+                  className="w-full p-3 bg-white border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:outline-none text-gray-900 placeholder-gray-400"
+                  placeholder="John Doe"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 />
@@ -132,12 +131,12 @@ export default function LoginPage() {
             )}
 
             <div>
-              <label className="block text-sm font-medium text-amber-200 mb-2">Email</label>
+              <label className="block text-sm font-medium text-gray-900 mb-2">Email Address</label>
               <input
                 type="email"
                 required
-                className="w-full p-3 bg-white/10 border-2 border-white/20 rounded-lg focus:border-amber-400 focus:outline-none text-white placeholder-gray-400"
-                placeholder="Enter your email"
+                className="w-full p-3 bg-white border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:outline-none text-gray-900 placeholder-gray-400"
+                placeholder="you@example.com"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               />
@@ -145,11 +144,11 @@ export default function LoginPage() {
 
             {!isLogin && (
               <div>
-                <label className="block text-sm font-medium text-amber-200 mb-2">Phone</label>
+                <label className="block text-sm font-medium text-gray-900 mb-2">Phone Number</label>
                 <input
                   type="tel"
                   required
-                  className="w-full p-3 bg-white/10 border-2 border-white/20 rounded-lg focus:border-amber-400 focus:outline-none text-white placeholder-gray-400"
+                  className="w-full p-3 bg-white border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:outline-none text-gray-900 placeholder-gray-400"
                   placeholder="+91 XXXXX XXXXX"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
@@ -158,12 +157,12 @@ export default function LoginPage() {
             )}
 
             <div>
-              <label className="block text-sm font-medium text-amber-200 mb-2">Password</label>
+              <label className="block text-sm font-medium text-gray-900 mb-2">Password</label>
               <input
                 type="password"
                 required
                 minLength={6}
-                className="w-full p-3 bg-white/10 border-2 border-white/20 rounded-lg focus:border-amber-400 focus:outline-none text-white placeholder-gray-400"
+                className="w-full p-3 bg-white border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:outline-none text-gray-900 placeholder-gray-400"
                 placeholder="Enter your password"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -173,7 +172,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-gradient-to-r from-amber-400 to-orange-500 text-white font-bold rounded-lg hover:shadow-xl hover:shadow-amber-500/50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold rounded-lg hover:shadow-lg hover:shadow-blue-500/30 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Please wait...' : isLogin ? 'Login' : 'Create Account'}
             </button>
@@ -181,11 +180,11 @@ export default function LoginPage() {
 
           {/* Footer */}
           <div className="mt-6 text-center">
-            <p className="text-gray-400 text-sm">
+            <p className="text-gray-600 text-sm">
               {isLogin ? "Don't have an account?" : 'Already have an account?'}{' '}
               <button
                 onClick={() => setIsLogin(!isLogin)}
-                className="text-amber-200 font-semibold hover:underline"
+                className="text-blue-600 font-semibold hover:underline"
               >
                 {isLogin ? 'Sign Up' : 'Login'}
               </button>
@@ -196,7 +195,7 @@ export default function LoginPage() {
           <div className="mt-4 text-center">
             <button
               onClick={() => router.push('/')}
-              className="text-gray-400 text-sm hover:text-amber-200 transition"
+              className="text-gray-600 text-sm hover:text-blue-600 transition"
             >
               Continue as Guest →
             </button>
@@ -205,7 +204,7 @@ export default function LoginPage() {
 
         {/* Info */}
         <div className="mt-6 text-center">
-          <p className="text-gray-400 text-xs">
+          <p className="text-gray-600 text-xs">
             By continuing, you agree to our Terms of Service and Privacy Policy
           </p>
         </div>

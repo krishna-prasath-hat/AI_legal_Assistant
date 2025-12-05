@@ -14,7 +14,17 @@ export const getToken = (): string | null => {
 export const getUser = (): any | null => {
   if (typeof window === 'undefined') return null
   const userStr = localStorage.getItem('user')
-  return userStr ? JSON.parse(userStr) : null
+
+  if (!userStr || userStr === 'undefined' || userStr === 'null') {
+    return null
+  }
+
+  try {
+    return JSON.parse(userStr)
+  } catch (e) {
+    console.error('Invalid user JSON in localStorage:', userStr)
+    return null
+  }
 }
 
 export const logout = (): void => {

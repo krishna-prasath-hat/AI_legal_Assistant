@@ -57,9 +57,7 @@ export default function LawyersPage() {
   const [manualLocation, setManualLocation] = useState(false)
   const [filters, setFilters] = useState({
     city: '',
-    state: '',
     practice_area: '',
-    language: '',
     verified_only: false
   })
   const [sortOrder, setSortOrder] = useState<'name_asc' | 'name_desc'>('name_asc')
@@ -84,20 +82,16 @@ export default function LawyersPage() {
     }
   }, [authChecked])
 
-  // Fetch lawyers when filters change
-  useEffect(() => {
-    if (authChecked) {
-      fetchLawyers()
-    }
-  }, [filters, sortOrder, page, location, authChecked])
+  // Don't auto-fetch - only fetch when user clicks Search button
+  // Removed auto-fetch on filter change
 
   // Don't render until auth is checked
   if (!authChecked) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4 animate-pulse">⚖️</div>
-          <p className="text-gray-300">Checking authentication...</p>
+          <p className="text-gray-700">Checking authentication...</p>
         </div>
       </div>
     )
@@ -126,8 +120,7 @@ export default function LawyersPage() {
 
         setFilters(prev => ({
           ...prev,
-          city: data.city || '',
-          state: data.region || ''
+          city: data.city || ''
         }))
       } catch (error) {
         console.log('Location detection failed, user can select manually')
@@ -146,12 +139,10 @@ export default function LawyersPage() {
       })
 
       if (filters.city) params.append('city', filters.city)
-      if (filters.state) params.append('state', filters.state)
       if (filters.practice_area) params.append('practice_area', filters.practice_area)
-      if (filters.language) params.append('language', filters.language)
       if (filters.verified_only) params.append('verified_only', 'true')
 
-      const response = await fetch(`${API_URL}/api/lawyers/directory?${params}`)
+      const response = await fetch(`${API_URL}/api/v1/lawyers/directory?${params}`)
 
       if (response.ok) {
         const data = await response.json()
@@ -181,7 +172,7 @@ export default function LawyersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 relative overflow-hidden">
       {/* Animated Justice Scales Background */}
       <div className="absolute inset-0 overflow-hidden opacity-10">
         <div className="absolute top-20 left-10 text-9xl animate-pulse">⚖️</div>
@@ -191,35 +182,34 @@ export default function LawyersPage() {
       </div>
 
       {/* Header */}
-      <header className="border-b border-white/10 bg-white/5 backdrop-blur-md sticky top-0 z-50">
+      <header className="border-b border-gray-200 bg-white backdrop-blur-md sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center shadow-lg">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-xl flex items-center justify-center shadow-lg">
               <span className="text-white font-bold text-2xl">⚖️</span>
             </div>
             <div>
-              <h1 className="text-xl font-bold bg-gradient-to-r from-amber-200 via-yellow-200 to-amber-300 bg-clip-text text-transparent">
+              <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
                 JustiFly
               </h1>
-              <p className="text-xs text-gray-400">Justice Takes Flight</p>
+              <p className="text-xs text-gray-600">Justice Takes Flight</p>
             </div>
           </div>
           <div className="flex items-center space-x-4">
             <nav className="hidden md:flex space-x-6">
-              <a href="/" className="text-gray-300 hover:text-amber-200 transition">Home</a>
-              <a href="/lawyers" className="text-amber-200 font-semibold">Lawyer Directory</a>
-              <a href="/cases" className="text-gray-300 hover:text-amber-200 transition">My Cases</a>
-              <a href="/tracker" className="text-gray-300 hover:text-amber-200 transition">Track Case</a>
+              <a href="/" className="text-gray-700 hover:text-blue-600 transition">Home</a>
+              <a href="/lawyers" className="text-blue-600 font-semibold">Lawyer Directory</a>
+              <a href="/cases" className="text-gray-700 hover:text-blue-600 transition">My Cases</a>
             </nav>
             {user && (
-              <div className="flex items-center space-x-3 border-l border-white/20 pl-4">
+              <div className="flex items-center space-x-3 border-l border-gray-300 pl-4">
                 <div className="text-right">
-                  <p className="text-sm font-semibold text-amber-200">{user.name || user.email}</p>
-                  <p className="text-xs text-gray-400">Logged in</p>
+                  <p className="text-sm font-semibold text-blue-600">{user.name || user.email}</p>
+                  <p className="text-xs text-gray-600">Logged in</p>
                 </div>
                 <button
                   onClick={() => logout()}
-                  className="px-4 py-2 bg-red-500/20 border border-red-400/30 rounded-lg text-sm text-red-200 hover:bg-red-500/30 transition"
+                  className="px-4 py-2 bg-red-100 border border-red-300 rounded-lg text-sm text-red-600 hover:bg-red-200 transition"
                 >
                   Logout
                 </button>
@@ -235,24 +225,24 @@ export default function LawyersPage() {
           {/* Page Title */}
           <div className="text-center mb-8">
             <div className="text-6xl mb-4">📋</div>
-            <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-400 bg-clip-text text-transparent">
+            <h2 className="text-4xl md:text-5xl font-bold mb-4 text-gray-900">
               Lawyer Directory
             </h2>
-            <p className="text-xl text-gray-300 mb-4">
+            <p className="text-xl text-gray-700 mb-4">
               Factual directory of advocates in India
             </p>
-            <p className="text-sm text-gray-400 italic">
+            <p className="text-sm text-gray-600 italic">
               Alphabetically sorted • No rankings or ratings
             </p>
           </div>
 
           {/* Compliance Disclaimer (Prominent) */}
-          <div className="bg-amber-900/30 border-2 border-amber-500/50 rounded-xl p-4 mb-8 backdrop-blur-sm">
+          <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 mb-8 bg-white">
             <div className="flex items-start space-x-3">
               <div className="text-2xl">⚠️</div>
               <div className="flex-1">
-                <h3 className="text-amber-200 font-bold mb-2">Important Disclaimer</h3>
-                <p className="text-sm text-gray-300 leading-relaxed">
+                <h3 className="text-blue-600 font-bold mb-2">Important Disclaimer</h3>
+                <p className="text-sm text-gray-700 leading-relaxed">
                   {MANDATORY_DISCLAIMER}
                 </p>
               </div>
@@ -261,20 +251,20 @@ export default function LawyersPage() {
 
           {/* Location Detection */}
           {location && location.detected && !manualLocation && (
-            <div className="bg-blue-900/30 border-2 border-blue-500/50 rounded-xl p-4 mb-6 backdrop-blur-sm">
+            <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 mb-6 bg-white">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className="text-2xl">📍</div>
                   <div>
-                    <h3 className="text-blue-200 font-bold">Location Detected</h3>
-                    <p className="text-sm text-gray-300">
-                      Showing advocates near <span className="font-semibold text-blue-200">{location.city}, {location.state}</span>
+                    <h3 className="text-blue-600 font-bold">Location Detected</h3>
+                    <p className="text-sm text-gray-700">
+                      Showing advocates in <span className="font-semibold text-blue-600">{location.city}</span>
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={() => setManualLocation(true)}
-                  className="px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-sm text-gray-300 hover:bg-white/20 transition"
+                  className="px-4 py-2 bg-white border border-gray-200 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-white/20 transition"
                 >
                   Change Location
                 </button>
@@ -284,43 +274,20 @@ export default function LawyersPage() {
 
           {/* Manual Location Selection */}
           {(!location || manualLocation) && (
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl shadow-2xl p-6 mb-6 border border-white/20">
-              <h3 className="text-lg font-semibold text-amber-200 mb-4 flex items-center">
+            <div className="bg-white border border-gray-200 backdrop-blur-md rounded-2xl shadow-2xl p-6 mb-6 border border-gray-300">
+              <h3 className="text-lg font-semibold text-blue-600 mb-4 flex items-center">
                 <span className="mr-2">📍</span>
                 Select Your Location
               </h3>
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-amber-200 mb-2">City</label>
-                  <input
-                    type="text"
-                    placeholder="e.g., Bangalore"
-                    className="w-full p-3 bg-white/10 border-2 border-white/20 rounded-lg focus:border-amber-400 focus:outline-none text-white placeholder-gray-400 backdrop-blur-sm"
-                    value={filters.city}
-                    onChange={(e) => setFilters({ ...filters, city: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-amber-200 mb-2">State</label>
-                  <select
-                    className="w-full p-3 bg-white/10 border-2 border-white/20 rounded-lg focus:border-amber-400 focus:outline-none text-white backdrop-blur-sm"
-                    value={filters.state}
-                    onChange={(e) => setFilters({ ...filters, state: e.target.value })}
-                  >
-                    <option value="" className="bg-slate-800">All States</option>
-                    <option value="Andhra Pradesh" className="bg-slate-800">Andhra Pradesh</option>
-                    <option value="Karnataka" className="bg-slate-800">Karnataka</option>
-                    <option value="Kerala" className="bg-slate-800">Kerala</option>
-                    <option value="Tamil Nadu" className="bg-slate-800">Tamil Nadu</option>
-                    <option value="Telangana" className="bg-slate-800">Telangana</option>
-                    <option value="Delhi" className="bg-slate-800">Delhi</option>
-                    <option value="Maharashtra" className="bg-slate-800">Maharashtra</option>
-                    <option value="Gujarat" className="bg-slate-800">Gujarat</option>
-                    <option value="Rajasthan" className="bg-slate-800">Rajasthan</option>
-                    <option value="Uttar Pradesh" className="bg-slate-800">Uttar Pradesh</option>
-                    <option value="West Bengal" className="bg-slate-800">West Bengal</option>
-                  </select>
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-blue-600 mb-2">City</label>
+                <input
+                  type="text"
+                  placeholder="e.g., Bangalore, Mumbai, Delhi"
+                  className="w-full p-3 bg-white border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none text-gray-900 placeholder-gray-400"
+                  value={filters.city}
+                  onChange={(e) => setFilters({ ...filters, city: e.target.value })}
+                />
               </div>
               {manualLocation && (
                 <button
@@ -328,7 +295,7 @@ export default function LawyersPage() {
                     setManualLocation(false)
                     detectLocation()
                   }}
-                  className="mt-4 px-4 py-2 bg-blue-500/20 border border-blue-400/30 rounded-lg text-sm text-blue-200 hover:bg-blue-500/30 transition"
+                  className="mt-4 px-4 py-2 bg-blue-100 border border-blue-300 rounded-lg text-sm text-blue-600 hover:bg-blue-200 transition"
                 >
                   🔄 Use My Current Location
                 </button>
@@ -337,79 +304,74 @@ export default function LawyersPage() {
           )}
 
           {/* Filter Section */}
-          <div className="bg-white/10 backdrop-blur-md rounded-2xl shadow-2xl p-6 mb-8 border border-white/20">
-            <h3 className="text-lg font-semibold text-amber-200 mb-4">Filter Directory</h3>
-            <div className="grid md:grid-cols-3 gap-4">
+          <div className="bg-white border border-gray-200 rounded-2xl shadow-lg p-6 mb-8">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Filter Directory</h3>
+            <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-amber-200 mb-2">Practice Area</label>
+                <label className="block text-sm font-medium text-gray-900 mb-2">Practice Area</label>
                 <select
-                  className="w-full p-3 bg-white/10 border-2 border-white/20 rounded-lg focus:border-amber-400 focus:outline-none text-white backdrop-blur-sm"
+                  className="w-full p-3 bg-white border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none text-gray-900"
                   value={filters.practice_area}
                   onChange={(e) => setFilters({ ...filters, practice_area: e.target.value })}
                 >
-                  <option value="" className="bg-slate-800">All Practice Areas</option>
-                  <option value="Criminal Law" className="bg-slate-800">Criminal Law</option>
-                  <option value="Cyber Law" className="bg-slate-800">Cyber Law</option>
-                  <option value="Civil Law" className="bg-slate-800">Civil Law</option>
-                  <option value="Consumer Law" className="bg-slate-800">Consumer Law</option>
-                  <option value="Family Law" className="bg-slate-800">Family Law</option>
+                  <option value="">All Practice Areas</option>
+                  <option value="Criminal Law">Criminal Law</option>
+                  <option value="Cyber Law">Cyber Law</option>
+                  <option value="Civil Law">Civil Law</option>
+                  <option value="Consumer Law">Consumer Law</option>
+                  <option value="Family Law">Family Law</option>
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-amber-200 mb-2">City</label>
+                <label className="block text-sm font-medium text-gray-900 mb-2">City</label>
                 <input
                   type="text"
-                  placeholder="e.g., Bangalore"
-                  className="w-full p-3 bg-white/10 border-2 border-white/20 rounded-lg focus:border-amber-400 focus:outline-none text-white placeholder-gray-400 backdrop-blur-sm"
+                  placeholder="e.g., Bangalore, Mumbai, Delhi"
+                  className="w-full p-3 bg-white border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none text-gray-900 placeholder-gray-400"
                   value={filters.city}
                   onChange={(e) => setFilters({ ...filters, city: e.target.value })}
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-amber-200 mb-2">Language</label>
-                <select
-                  className="w-full p-3 bg-white/10 border-2 border-white/20 rounded-lg focus:border-amber-400 focus:outline-none text-white backdrop-blur-sm"
-                  value={filters.language}
-                  onChange={(e) => setFilters({ ...filters, language: e.target.value })}
-                >
-                  <option value="" className="bg-slate-800">All Languages</option>
-                  <option value="English" className="bg-slate-800">English</option>
-                  <option value="Hindi" className="bg-slate-800">Hindi</option>
-                  <option value="Kannada" className="bg-slate-800">Kannada</option>
-                  <option value="Tamil" className="bg-slate-800">Tamil</option>
-                  <option value="Telugu" className="bg-slate-800">Telugu</option>
-                </select>
-              </div>
             </div>
 
             <div className="mt-4 flex items-center justify-between">
-              <label className="flex items-center space-x-2 text-gray-300">
+              <label className="flex items-center space-x-2 text-gray-700">
                 <input
                   type="checkbox"
-                  className="w-4 h-4 rounded border-white/20"
+                  className="w-4 h-4 rounded border-gray-300"
                   checked={filters.verified_only}
                   onChange={(e) => setFilters({ ...filters, verified_only: e.target.checked })}
                 />
                 <span className="text-sm">Show only verified profiles</span>
               </label>
 
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-400">Sort:</span>
-                <select
-                  className="p-2 bg-white/10 border-2 border-white/20 rounded-lg focus:border-amber-400 focus:outline-none text-white text-sm backdrop-blur-sm"
-                  value={sortOrder}
-                  onChange={(e) => setSortOrder(e.target.value as 'name_asc' | 'name_desc')}
+              <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-gray-600">Sort:</span>
+                  <select
+                    className="p-2 bg-white border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none text-gray-900 text-sm"
+                    value={sortOrder}
+                    onChange={(e) => setSortOrder(e.target.value as 'name_asc' | 'name_desc')}
+                  >
+                    <option value="name_asc">A → Z</option>
+                    <option value="name_desc">Z → A</option>
+                  </select>
+                </div>
+                
+                {/* Search Button */}
+                <button
+                  onClick={() => fetchLawyers()}
+                  className="px-6 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold rounded-lg hover:shadow-lg transition"
                 >
-                  <option value="name_asc" className="bg-slate-800">A → Z</option>
-                  <option value="name_desc" className="bg-slate-800">Z → A</option>
-                </select>
+                  🔍 Search
+                </button>
               </div>
             </div>
           </div>
 
           {/* Results Count */}
           <div className="mb-4 text-center">
-            <p className="text-gray-400">
+            <p className="text-gray-600">
               Showing {lawyers.length} advocate{lawyers.length !== 1 ? 's' : ''}
               {filters.city && ` in ${filters.city}`}
               {filters.practice_area && ` practicing ${filters.practice_area}`}
@@ -420,21 +382,21 @@ export default function LawyersPage() {
           {loading ? (
             <div className="text-center py-12">
               <div className="text-4xl mb-4">⏳</div>
-              <p className="text-gray-400">Loading directory...</p>
+              <p className="text-gray-600">Loading directory...</p>
             </div>
           ) : lawyers.length === 0 ? (
-            <div className="text-center py-12 bg-white/5 rounded-2xl border border-white/10">
+            <div className="text-center py-12 bg-white rounded-2xl border border-gray-200">
               <div className="text-6xl mb-4">📂</div>
-              <h3 className="text-2xl font-bold text-amber-200 mb-3">No Lawyer Data Available</h3>
-              <p className="text-gray-400 mb-6 max-w-2xl mx-auto">
+              <h3 className="text-2xl font-bold text-blue-600 mb-3">No Lawyer Data Available</h3>
+              <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
                 The lawyer directory is empty. To populate it with real data:
               </p>
               <div className="bg-slate-800/50 rounded-lg p-6 max-w-2xl mx-auto text-left">
-                <h4 className="text-amber-200 font-bold mb-3">📥 Import Lawyer Data:</h4>
-                <ol className="text-sm text-gray-300 space-y-2 list-decimal list-inside">
+                <h4 className="text-blue-600 font-bold mb-3">📥 Import Lawyer Data:</h4>
+                <ol className="text-sm text-gray-700 space-y-2 list-decimal list-inside">
                   <li>Download CSV from: <a href="https://data.gov.in/catalog/all-india-advocate-list" target="_blank" className="text-blue-300 underline">data.gov.in</a></li>
-                  <li>Save as: <code className="bg-slate-900 px-2 py-1 rounded text-amber-200">backend/scripts/advocates_data.csv</code></li>
-                  <li>Run: <code className="bg-slate-900 px-2 py-1 rounded text-amber-200">python3 backend/scripts/setup_lawyer_data.py</code></li>
+                  <li>Save as: <code className="bg-slate-900 px-2 py-1 rounded text-blue-600">backend/scripts/advocates_data.csv</code></li>
+                  <li>Run: <code className="bg-slate-900 px-2 py-1 rounded text-blue-600">python3 backend/scripts/setup_lawyer_data.py</code></li>
                   <li>Refresh this page</li>
                 </ol>
               </div>
@@ -442,12 +404,12 @@ export default function LawyersPage() {
           ) : (
             <div className="grid md:grid-cols-2 gap-6">
               {lawyers.map((lawyer) => (
-                <div key={lawyer.id} className="bg-white/10 backdrop-blur-md rounded-2xl shadow-xl p-6 border border-white/20 hover:bg-white/15 transition">
+                <div key={lawyer.id} className="bg-white border border-gray-200 backdrop-blur-md rounded-2xl shadow-xl p-6 border border-gray-300 hover:bg-gray-50 transition">
                   {/* Lawyer Name & Verification Badge */}
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
-                      <h3 className="text-xl font-bold text-amber-200 mb-1">{lawyer.full_name}</h3>
-                      <p className="text-sm text-gray-400">
+                      <h3 className="text-xl font-bold text-blue-600 mb-1">{lawyer.full_name}</h3>
+                      <p className="text-sm text-gray-600">
                         {lawyer.city}, {lawyer.state}
                       </p>
                       <p className="text-xs text-gray-500 mt-1">
@@ -463,19 +425,19 @@ export default function LawyersPage() {
                   </div>
 
                   {/* Enrollment Details */}
-                  <div className="mb-4 p-3 bg-white/5 rounded-lg border border-white/10">
-                    <p className="text-xs text-gray-400 mb-1">Enrollment Number</p>
-                    <p className="text-sm font-mono text-amber-200">{lawyer.enrollment_number}</p>
-                    <p className="text-xs text-gray-400 mt-2">Bar Council</p>
-                    <p className="text-sm text-gray-300">{lawyer.bar_council_state}</p>
+                  <div className="mb-4 p-3 bg-white rounded-lg border border-gray-200">
+                    <p className="text-xs text-gray-600 mb-1">Enrollment Number</p>
+                    <p className="text-sm font-mono text-blue-600">{lawyer.enrollment_number}</p>
+                    <p className="text-xs text-gray-600 mt-2">Bar Council</p>
+                    <p className="text-sm text-gray-700">{lawyer.bar_council_state}</p>
                   </div>
 
                   {/* Practice Areas */}
                   <div className="mb-4">
-                    <p className="text-xs text-gray-400 mb-2">Practice Areas</p>
+                    <p className="text-xs text-gray-600 mb-2">Practice Areas</p>
                     <div className="flex flex-wrap gap-2">
                       {lawyer.practice_areas.map((area, i) => (
-                        <span key={i} className="px-3 py-1 bg-blue-500/20 text-blue-200 text-sm rounded-full border border-blue-400/30">
+                        <span key={i} className="px-3 py-1 bg-blue-100 text-blue-600 text-sm rounded-full border border-blue-300">
                           {area}
                         </span>
                       ))}
@@ -485,8 +447,8 @@ export default function LawyersPage() {
                   {/* Courts */}
                   {lawyer.courts_practicing_in && lawyer.courts_practicing_in.length > 0 && (
                     <div className="mb-4">
-                      <p className="text-xs text-gray-400 mb-2">Courts</p>
-                      <div className="text-sm text-gray-300">
+                      <p className="text-xs text-gray-600 mb-2">Courts</p>
+                      <div className="text-sm text-gray-700">
                         {lawyer.courts_practicing_in.join(', ')}
                       </div>
                     </div>
@@ -494,10 +456,10 @@ export default function LawyersPage() {
 
                   {/* Languages */}
                   <div className="mb-4">
-                    <p className="text-xs text-gray-400 mb-2">Languages</p>
+                    <p className="text-xs text-gray-600 mb-2">Languages</p>
                     <div className="flex flex-wrap gap-2">
                       {lawyer.languages_known.map((lang, i) => (
-                        <span key={i} className="px-2 py-1 bg-purple-500/20 text-purple-200 text-xs rounded border border-purple-400/30">
+                        <span key={i} className="px-2 py-1 bg-blue-100 text-purple-200 text-xs rounded border border-blue-300">
                           {lang}
                         </span>
                       ))}
@@ -507,16 +469,16 @@ export default function LawyersPage() {
                   {/* Qualifications */}
                   {lawyer.law_degree && (
                     <div className="mb-4">
-                      <p className="text-xs text-gray-400 mb-1">Qualifications</p>
-                      <p className="text-sm text-gray-300">{lawyer.law_degree}</p>
+                      <p className="text-xs text-gray-600 mb-1">Qualifications</p>
+                      <p className="text-sm text-gray-700">{lawyer.law_degree}</p>
                       {lawyer.law_school && (
-                        <p className="text-xs text-gray-400 mt-1">{lawyer.law_school}</p>
+                        <p className="text-xs text-gray-600 mt-1">{lawyer.law_school}</p>
                       )}
                     </div>
                   )}
 
                   {/* Contact Button */}
-                  <button className="w-full py-3 bg-gradient-to-r from-amber-400 to-orange-500 text-white font-bold rounded-lg hover:shadow-xl hover:shadow-amber-500/50 transition">
+                  <button className="w-full py-3 bg-gradient-to-r from-amber-400 to-orange-500 text-gray-900 font-bold rounded-lg hover:shadow-xl hover:shadow-amber-500/50 transition">
                     View Contact Information
                   </button>
 
@@ -533,17 +495,17 @@ export default function LawyersPage() {
           {totalPages > 1 && (
             <div className="mt-8 flex justify-center items-center space-x-4">
               <button
-                className="px-4 py-2 border-2 border-amber-400 text-amber-200 font-semibold rounded-lg hover:bg-amber-400/10 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 border-2 border-blue-400 text-blue-600 font-semibold rounded-lg hover:bg-blue-400/10 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={page === 1}
                 onClick={() => setPage(page - 1)}
               >
                 ← Previous
               </button>
-              <span className="text-gray-400">
+              <span className="text-gray-600">
                 Page {page} of {totalPages}
               </span>
               <button
-                className="px-4 py-2 border-2 border-amber-400 text-amber-200 font-semibold rounded-lg hover:bg-amber-400/10 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 border-2 border-blue-400 text-blue-600 font-semibold rounded-lg hover:bg-blue-400/10 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={page === totalPages}
                 onClick={() => setPage(page + 1)}
               >
@@ -554,11 +516,11 @@ export default function LawyersPage() {
 
           {/* Bottom Disclaimer */}
           <div className="mt-12 p-6 bg-slate-800/50 border border-slate-700 rounded-xl">
-            <h4 className="text-amber-200 font-bold mb-3 flex items-center">
+            <h4 className="text-blue-600 font-bold mb-3 flex items-center">
               <span className="mr-2">ℹ️</span>
               How to Use This Directory
             </h4>
-            <ul className="text-sm text-gray-300 space-y-2 list-disc list-inside">
+            <ul className="text-sm text-gray-700 space-y-2 list-disc list-inside">
               <li>This directory contains factual information about advocates enrolled with State Bar Councils</li>
               <li>Listings are presented in alphabetical order only - no ranking or rating is implied</li>
               <li>Verify advocate credentials through the respective State Bar Council website</li>

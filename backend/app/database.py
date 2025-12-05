@@ -47,6 +47,9 @@ def init_db() -> None:
     Initialize database - create all tables
     """
     try:
+        # Import models to ensure they are registered with Base
+        from app import models  # noqa: F401
+        
         Base.metadata.create_all(bind=engine)
         logger.info("Database initialized successfully")
     except Exception as e:
