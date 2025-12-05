@@ -76,6 +76,8 @@ class DraftFIRRequest(BaseModel):
     user_name: str
     user_address: str
     user_phone: str
+    incident_text: Optional[str] = None
+    legal_sections: Optional[List[dict]] = None  # List of {act_name, section_number}
 
 
 class DraftFIRResponse(BaseModel):
@@ -229,8 +231,7 @@ async def get_legal_sections(
 @router.post("/draft-fir", response_model=DraftFIRResponse)
 async def draft_fir(
     request: DraftFIRRequest,
-    db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    db: Session = Depends(get_db)
 ):
     """
     Generate FIR draft for an incident
@@ -246,43 +247,40 @@ async def draft_fir(
     try:
         logger.info(f"Generating FIR draft for incident {request.incident_id}")
         
-        # TODO: Fetch incident and analysis from database
-        # incident = db.query(Incident).filter(Incident.id == request.incident_id).first()
-        # if not incident:
-        #     raise NotFoundError(f"Incident {request.incident_id} not found")
-        
         # Get legal extraction engine
         engine = get_legal_extraction_engine()
         
-        # For demo, use placeholder data
+        # Import data structures
         from app.ai.legal_extraction import IncidentClassification, LegalSection
         
+        # Prepare data from request (Dynamic)
+        incident_text = request.incident_text or "Details not provided."
+        
+        legal_sections = []
+        if request.legal_sections:
+            for s in request.legal_sections:
+                legal_sections.append(LegalSection(
+                    act_name=s.get('act_name', ''),
+                    section_number=s.get('section_number', ''),
+                    section_title=s.get('section_title', ''),
+                    section_description='',
+                    relevance_score=1.0,
+                    reasoning=''
+                ))
+        
+        # Dummy classification (not used in updated prompt)
         classification = IncidentClassification(
-            offense_type="theft",
+            offense_type="reported offense",
             offense_category="criminal",
             severity_level="medium",
-            confidence_score=0.85,
-            keywords=["stolen", "theft"],
+            confidence_score=0.0,
+            keywords=[],
             threat_indicators=[]
         )
         
-        legal_sections = [
-            LegalSection(
-                act_name="IPC",
-                section_number="378",
-                section_title="Theft",
-                section_description="Theft definition",
-                relevance_score=0.9,
-                reasoning="Applicable",
-                is_cognizable=True,
-                is_bailable=False,
-                punishment_description="Up to 3 years"
-            )
-        ]
-        
         # Generate FIR draft
         fir_draft = await engine.llm_client.generate_fir_draft(
-            incident_text="Sample incident",  # Would fetch from DB
+            incident_text=incident_text,
             classification=classification,
             legal_sections=legal_sections,
             user_details={

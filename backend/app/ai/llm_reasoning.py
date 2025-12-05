@@ -18,7 +18,8 @@ try:
         CUSTOM_PROMPT_TEMPLATE,
         ACTIVE_PROMPT,
         FIR_DRAFT_PROMPT,
-        SECTION_REFINEMENT_PROMPT
+        SECTION_REFINEMENT_PROMPT,
+        NEXT_STEPS_PROMPT
     )
 except ImportError:
     # Fallback if prompts_config doesn't exist
@@ -42,7 +43,12 @@ class LLMReasoning:
     def _initialize_client(self):
         """Initialize LLM client (OpenAI or Google AI)"""
         try:
-            if settings.OPENAI_API_KEY:
+            if settings.GROQ_API_KEY:
+                from groq import Groq
+                self.client = Groq(api_key=settings.GROQ_API_KEY)
+                self.provider = "groq"
+                logger.info("Initialized Groq client")
+            elif settings.OPENAI_API_KEY:
                 from openai import OpenAI
                 self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
                 self.provider = "openai"
@@ -91,6 +97,8 @@ class LLMReasoning:
             # Get LLM response
             if self.provider == "openai":
                 response = await self._call_openai(prompt)
+            elif self.provider == "groq":
+                response = await self._call_groq(prompt)
             else:
                 response = await self._call_google(prompt)
             
@@ -128,6 +136,8 @@ class LLMReasoning:
             
             if self.provider == "openai":
                 summary = await self._call_openai(prompt)
+            elif self.provider == "groq":
+                summary = await self._call_groq(prompt)
             else:
                 summary = await self._call_google(prompt)
             
@@ -169,6 +179,8 @@ class LLMReasoning:
             
             if self.provider == "openai":
                 fir_draft = await self._call_openai(prompt)
+            elif self.provider == "groq":
+                fir_draft = await self._call_groq(prompt)
             else:
                 fir_draft = await self._call_google(prompt)
             
@@ -177,6 +189,47 @@ class LLMReasoning:
         except Exception as e:
             logger.error(f"FIR draft generation failed: {e}")
             return self._fallback_fir_draft(incident_text, user_details)
+
+    async def generate_practical_guidance(
+        self,
+        incident_text: str,
+        classification: IncidentClassification
+    ) -> Dict[str, List[str]]:
+        """
+        Generate practical next steps and required documents
+        """
+        if self.provider == "fallback":
+            return {"next_steps": [], "required_documents": []}
+            
+        try:
+            if not NEXT_STEPS_PROMPT: 
+                return {"next_steps": [], "required_documents": []}
+                
+            prompt = NEXT_STEPS_PROMPT.format(
+                incident_text=incident_text,
+                classification=f"{classification.offense_type} ({classification.offense_category})"
+            )
+            
+            if self.provider == "openai":
+                response = await self._call_openai(prompt)
+            elif self.provider == "groq":
+                response = await self._call_groq(prompt)
+            else:
+                response = await self._call_google(prompt)
+                
+            # Parse JSON
+            try:
+                json_start = response.find('{')
+                json_end = response.rfind('}') + 1
+                json_str = response[json_start:json_end]
+                return json.loads(json_str)
+            except Exception:
+                # Basic cleanup if not valid JSON
+                return {"next_steps": [], "required_documents": []}
+                
+        except Exception as e:
+            logger.error(f"Practical guidance generation failed: {e}")
+            return {"next_steps": [], "required_documents": []}
     
     def _create_section_refinement_prompt(
         self,
@@ -293,6 +346,15 @@ Keep it concise and user-friendly."""
             for s in legal_sections[:5]
         ])
         
+        if FIR_DRAFT_PROMPT:
+            return FIR_DRAFT_PROMPT.format(
+                user_name=user_details.get('name', '[Name]'),
+                user_address=user_details.get('address', '[Address]'),
+                user_phone=user_details.get('phone', '[Phone]'),
+                incident_text=incident_text,
+                legal_sections=sections_text
+            )
+            
         return f"""Draft a formal FIR (First Information Report) in proper format:
 
 Complainant Details:
@@ -331,6 +393,23 @@ Use formal legal language appropriate for Indian police stations."""
             logger.error(f"OpenAI API call failed: {e}")
             raise
     
+    async def _call_groq(self, prompt: str) -> str:
+        """Call Groq API"""
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": "You are a legal expert specializing in Indian law."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.3,
+                max_tokens=2000
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            logger.error(f"Groq API call failed: {e}")
+            raise
+
     async def _call_google(self, prompt: str) -> str:
         """Call Google AI API"""
         try:

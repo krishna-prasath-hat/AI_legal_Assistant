@@ -216,29 +216,58 @@ Keep it simple and actionable."
 # FIR DRAFT PROMPT - For generating FIR documents
 # ============================================================================
 
-FIR_DRAFT_PROMPT = """Draft a formal FIR (First Information Report) for an Indian police station.
+FIR_DRAFT_PROMPT = """Draft a formal FIR (First Information Report) for an Indian police station based on the following details.
 
 COMPLAINANT DETAILS:
 Name: {user_name}
 Address: {user_address}
 Phone: {user_phone}
 
-INCIDENT:
+INCIDENT DESCRIPTION:
 {incident_text}
 
-APPLICABLE SECTIONS:
+PROVIDED LEGAL SECTIONS (Reference Only):
 {legal_sections}
 
-FORMAT REQUIRED:
-1. Subject line
-2. Formal salutation
-3. Complainant introduction
-4. Detailed incident description
-5. Request for action under specific sections
-6. Verification statement
-7. Signature block
+INSTRUCTIONS:
+1. Subject Line: Create a specific subject line mentioning the offense type (e.g., "Complaint regarding Theft of Mobile Phone and Cyber Harassment"). Do NOT use "general" unless absolutely necessary.
+2. Applicable Sections: If the 'PROVIDED LEGAL SECTIONS' list is empty, generic, or insufficient, YOU MUST DETERMINE the relevant IPC/IT Act sections based on the incident description and cite them in the request for action.
+3. Content: Draft a professional, detailed complaint addressed to the Station House Officer (SHO).
+4. Structure:
+   - To Address
+   - Subject
+   - Body (Incident details, specific allegations)
+   - Request for Action (Cite specific laws like IPC 379, IT Act 66, etc.)
+   - Conclusion (Signature block)
 
 Use formal legal language appropriate for Indian police stations."""
+
+# ============================================================================
+# NEXT STEPS PROMPT - For structured JSON guidance
+# ============================================================================
+
+NEXT_STEPS_PROMPT = """Analyze the following incident and provide structured practical guidance.
+
+INCIDENT: {incident_text}
+
+CLASSIFICATION: {classification}
+
+TASK:
+1. List 3-5 IMMEDIATE NEXT STEPS based on the specific incident. Be practical and specific (e.g., "Block credit card", "Change passwords").
+2. List REQUIRED DOCUMENTS specific to this case.
+
+OUTPUT FORMAT (JSON ONLY):
+{{
+  "next_steps": [
+    "Step 1...",
+    "Step 2..."
+  ],
+  "required_documents": [
+    "Doc 1...",
+    "Doc 2..."
+  ]
+}}
+"""
 
 # ============================================================================
 # SECTION REFINEMENT PROMPT - For analyzing legal sections

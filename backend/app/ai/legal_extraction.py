@@ -138,11 +138,21 @@ class LegalExtractionEngine:
                 legal_sections
             )
             
-            # Step 6: Determine required documents
-            required_documents = self._get_required_documents(classification, legal_sections)
+            # Step 6 & 7: Generate practical guidance via LLM
+            guidance = await self.llm_client.generate_practical_guidance(
+                cleaned_text,
+                classification
+            )
             
-            # Step 7: Generate next steps
-            next_steps = self._generate_next_steps(classification, legal_sections)
+            required_documents = guidance.get('required_documents', [])
+            next_steps = guidance.get('next_steps', [])
+            
+            # Fallback to rule-based if LLM extraction failed
+            if not required_documents:
+                required_documents = self._get_required_documents(classification, legal_sections)
+            
+            if not next_steps:
+                next_steps = self._generate_next_steps(classification, legal_sections)
             
             return LegalAnalysisResult(
                 classification=classification,

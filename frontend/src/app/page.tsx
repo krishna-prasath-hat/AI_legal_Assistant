@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { getUser, logout } from '@/utils/auth'
 import { useRouter } from 'next/navigation'
+import ReactMarkdown from 'react-markdown'
 
 interface AnalysisResult {
   incident_id: string
@@ -378,7 +379,22 @@ export default function HomePage() {
                 <h3 className="font-bold text-green-900 text-lg mb-3 flex items-center">
                   <span className="mr-2">🤖</span> AI Analysis Summary
                 </h3>
-                <p className="text-gray-700 leading-relaxed whitespace-pre-line">{analysisResult.ai_summary}</p>
+                <div className="prose prose-sm max-w-none text-gray-700">
+                  <ReactMarkdown
+                    components={{
+                      h1: ({node, ...props}) => <h1 className="text-xl font-bold text-gray-900 mt-4 mb-2" {...props} />,
+                      h2: ({node, ...props}) => <h2 className="text-lg font-bold text-gray-800 mt-3 mb-2" {...props} />,
+                      h3: ({node, ...props}) => <h3 className="text-md font-bold text-blue-800 mt-4 mb-2 border-b pb-1" {...props} />,
+                      h4: ({node, ...props}) => <h4 className="text-base font-bold text-blue-700 mt-2 mb-1" {...props} />,
+                      strong: ({node, ...props}) => <strong className="font-bold text-indigo-900" {...props} />,
+                      ul: ({node, ...props}) => <ul className="list-disc list-inside space-y-1 my-2 pl-2" {...props} />,
+                      li: ({node, ...props}) => <li className="text-gray-700" {...props} />,
+                      p: ({node, ...props}) => <p className="text-gray-700 leading-relaxed mb-3" {...props} />
+                    }}
+                  >
+                    {analysisResult.ai_summary}
+                  </ReactMarkdown>
+                </div>
               </div>
 
               {/* Legal Sections */}
@@ -466,62 +482,56 @@ export default function HomePage() {
                 </div>
               )}
 
-              {/* Action Buttons */}
               <div className="flex flex-wrap gap-3 pt-4">
                 <button
-                  onClick={() => {
-                    setShowResults(false)
-                    setIncidentText('')
-                  }}
-                  className="flex-1 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold rounded-xl hover:shadow-lg transition"
-                >
-                  Analyze Another Incident
-                </button>
-                <button
                   onClick={async () => {
-                    // Generate complaint draft
-                    const complaint = `COMPLAINT
+                    try {
+                      // Call Backend to generated smart draft
+                      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/legal/draft-fir`, {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                          incident_id: analysisResult.incident_id,
+                          user_name: user?.name || '[Your Name]',
+                          user_address: '[Your Address]',
+                          user_phone: '[Your Phone]',
+                          incident_text: incidentText,
+                          legal_sections: analysisResult.legal_sections
+                        })
+                      })
 
-To,
-The Officer In-Charge,
-[Police Station Name]
-[Location]
-
-Subject: Complaint regarding ${analysisResult.classification.offense_type}
-
-Sir/Madam,
-
-I, [Your Name], resident of [Your Address], hereby lodge a complaint regarding the following incident:
-
-INCIDENT DETAILS:
-${incidentText}
-
-Date of Incident: ${analysisResult.entities.find((e: any) => e.entity_type === 'DATE')?.entity_value || 'As mentioned above'}
-Location: ${analysisResult.entities.find((e: any) => e.entity_type === 'LOCATION')?.entity_value || 'As mentioned above'}
-
-APPLICABLE LAWS:
-${analysisResult.legal_sections.slice(0, 3).map((s: any) => `- ${s.act_name} Section ${s.section_number}: ${s.section_title}`).join('\n')}
-
-I request you to kindly take necessary action and register an FIR under the applicable sections of law.
-
-Thanking you,
-
-[Your Signature]
-[Your Name]
-[Contact Number]
-[Date]
-
----
-Note: This is a draft. Please customize with your details before submission.
-`
-                    // Copy to clipboard
-                    navigator.clipboard.writeText(complaint)
-                    alert('Complaint draft copied to clipboard! You can now paste and customize it.')
+                      if (response.ok) {
+                        const data = await response.json()
+                        
+                        // Create Blob and Download
+                        const element = document.createElement("a");
+                        const file = new Blob([data.fir_draft], {type: 'text/plain'});
+                        element.href = URL.createObjectURL(file);
+                        element.download = "Complaint_Draft.txt";
+                        document.body.appendChild(element);
+                        element.click();
+                        document.body.removeChild(element);
+                        
+                        // Optional: Also copy to clipboard for convenience?
+                        // navigator.clipboard.writeText(data.fir_draft)
+                        alert('✅ Complaint Draft Downloaded!')
+                      } else {
+                        const err = await response.json()
+                        alert(`Failed to generate draft: ${err.detail}`)
+                      }
+                    } catch (error) {
+                      console.error('Error:', error)
+                      alert('Failed to connect to server for FIR generation.')
+                    }
                   }}
-                  className="flex-1 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold rounded-xl hover:shadow-lg transition"
+                  className="flex-1 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold rounded-xl hover:shadow-lg transition flex items-center justify-center space-x-2"
                 >
-                  📝 Generate Complaint Draft
+                  <span className="text-xl">⬇️</span>
+                  <span>Download Complaint Draft</span>
                 </button>
+                
                 <button
                   onClick={() => window.print()}
                   className="px-6 py-3 bg-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-300 transition"

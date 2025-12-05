@@ -38,6 +38,7 @@ class Settings(BaseSettings):
     # AI/ML APIs
     OPENAI_API_KEY: str = ""
     GOOGLE_AI_API_KEY: str = ""
+    GROQ_API_KEY: str = ""
     AI_MODEL: str = "gpt-3.5-turbo"
     EMBEDDING_MODEL: str = "text-embedding-3-small"
     
