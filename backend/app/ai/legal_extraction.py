@@ -25,6 +25,7 @@ class LegalSection:
     is_cognizable: Optional[bool] = None
     is_bailable: Optional[bool] = None
     punishment_description: Optional[str] = None
+    court_fees: Optional[str] = None
 
 
 @dataclass

@@ -191,6 +191,15 @@ class LLMReasoning:
             for i, r in enumerate(vector_results[:10])
         ])
         
+        if SECTION_REFINEMENT_PROMPT:
+            return SECTION_REFINEMENT_PROMPT.format(
+                incident_text=incident_text,
+                offense_type=classification.offense_type,
+                offense_category=classification.offense_category,
+                severity_level=classification.severity_level,
+                sections_list=sections_text
+            )
+            
         return f"""You are a legal expert analyzing an incident under Indian law.
 
 Incident: {incident_text}
@@ -204,6 +213,7 @@ Potentially relevant legal sections:
 For each relevant section, provide:
 1. Why it applies to this incident
 2. Relevance score (0.0 to 1.0)
+3. Approximate court fees (in INR)
 
 Return ONLY a JSON array with this structure:
 [
@@ -211,7 +221,8 @@ Return ONLY a JSON array with this structure:
     "section_number": "378",
     "act_name": "IPC",
     "relevance_score": 0.9,
-    "reasoning": "This section applies because..."
+    "reasoning": "This section applies because...",
+    "court_fees": "Free / ₹5000"
   }}
 ]
 
@@ -363,7 +374,8 @@ Use formal legal language appropriate for Indian police stations."""
                         reasoning=item.get('reasoning', ''),
                         is_cognizable=payload.get('is_cognizable'),
                         is_bailable=payload.get('is_bailable'),
-                        punishment_description=payload.get('punishment_description')
+                        punishment_description=payload.get('punishment_description'),
+                        court_fees=item.get('court_fees')
                     ))
             
             return sections

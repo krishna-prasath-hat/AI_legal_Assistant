@@ -272,36 +272,7 @@ export default function LawyersPage() {
             </div>
           )}
 
-          {/* Manual Location Selection */}
-          {(!location || manualLocation) && (
-            <div className="bg-white border border-gray-200 backdrop-blur-md rounded-2xl shadow-2xl p-6 mb-6 border border-gray-300">
-              <h3 className="text-lg font-semibold text-blue-600 mb-4 flex items-center">
-                <span className="mr-2">📍</span>
-                Select Your Location
-              </h3>
-              <div>
-                <label className="block text-sm font-medium text-blue-600 mb-2">City</label>
-                <input
-                  type="text"
-                  placeholder="e.g., Bangalore, Mumbai, Delhi"
-                  className="w-full p-3 bg-white border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none text-gray-900 placeholder-gray-400"
-                  value={filters.city}
-                  onChange={(e) => setFilters({ ...filters, city: e.target.value })}
-                />
-              </div>
-              {manualLocation && (
-                <button
-                  onClick={() => {
-                    setManualLocation(false)
-                    detectLocation()
-                  }}
-                  className="mt-4 px-4 py-2 bg-blue-100 border border-blue-300 rounded-lg text-sm text-blue-600 hover:bg-blue-200 transition"
-                >
-                  🔄 Use My Current Location
-                </button>
-              )}
-            </div>
-          )}
+
 
           {/* Filter Section */}
           <div className="bg-white border border-gray-200 rounded-2xl shadow-lg p-6 mb-8">
@@ -417,9 +388,9 @@ export default function LawyersPage() {
                       </p>
                     </div>
                     {lawyer.profile_verified && (
-                      <div className="flex items-center space-x-1 bg-green-500/20 px-3 py-1 rounded-full border border-green-400/30">
-                        <span className="text-green-300">✓</span>
-                        <span className="text-xs font-semibold text-green-200">Verified</span>
+                      <div className="flex items-center space-x-1 bg-cyan-50 px-3 py-1 rounded-full border border-cyan-200">
+                        <span className="text-cyan-600 font-bold">✓</span>
+                        <span className="text-xs font-semibold text-cyan-700">Verified</span>
                       </div>
                     )}
                   </div>
@@ -459,7 +430,7 @@ export default function LawyersPage() {
                     <p className="text-xs text-gray-600 mb-2">Languages</p>
                     <div className="flex flex-wrap gap-2">
                       {lawyer.languages_known.map((lang, i) => (
-                        <span key={i} className="px-2 py-1 bg-blue-100 text-purple-200 text-xs rounded border border-blue-300">
+                        <span key={i} className="px-2 py-1 bg-gray-50 text-gray-700 text-xs rounded border border-gray-200 font-medium">
                           {lang}
                         </span>
                       ))}
@@ -478,7 +449,7 @@ export default function LawyersPage() {
                   )}
 
                   {/* Contact Button */}
-                  <button className="w-full py-3 bg-gradient-to-r from-amber-400 to-orange-500 text-gray-900 font-bold rounded-lg hover:shadow-xl hover:shadow-amber-500/50 transition">
+                  <button className="w-full py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold rounded-lg hover:shadow-lg hover:shadow-blue-500/30 transition">
                     View Contact Information
                   </button>
 

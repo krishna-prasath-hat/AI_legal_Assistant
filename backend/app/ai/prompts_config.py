@@ -104,31 +104,55 @@ INSTRUCTIONS:
 # """
 
 LEGAL_ANALYSIS_PROMPT = """
-You are a legal analysis engine for Indian law.
+You are a senior Indian Legal Advisor. Provide a comprehensive, actionable legal analysis.
 
-Incident Description:
+INCIDENT DESCRIPTION:
 {incident_text}
 
-Your Task:
-- Identify the correct IPC / CrPC / IT Act sections applicable to the incident above.
-- For EACH section, return the following fields:
- 
-{
-  "section": "<section number>",
-  "act": "<IPC / CrPC / IT Act etc>",
-  "title": "<name of the offence>",
-  "description": "<short explanation>",
-  "is_bailable": true/false,
-  "is_cognizable": true/false,
-  "punishment": "<years/fine>",
-  "court_fees": "<exact or estimated fees>",
-  "compoundable": true/false
-}
- 
-Rules:
-- Always output JSON list (array).
-- No text outside JSON.
-- If multiple sections apply, list all of them.
+YOUR TASK:
+Analyze the incident and generate a structured report in the EXACT format below. Use Markdown.
+
+---
+
+### 1. APPLICABLE LAWS
+**IPC (Indian Penal Code)**
+- **Section [Number] – [Offense Name]**
+  [Explanation of why it applies]
+- [Repeat for other sections]
+
+**IT Act (Information Technology Act, 2000)** (If applicable)
+- **Section [Number] – [Offense Name]**
+  [Explanation]
+
+**CrPC (Procedure)**
+- [Relevant procedures, e.g., Filing FIR]
+
+### 2. CIVIL REMEDIES (Optional)
+- **[Remedy Name]** (e.g., Cease & Desist Notice)
+  [Explanation of how it helps]
+
+### 3. COURT OPTIONS & APPROX COSTS
+Provide realistic Indian market estimates:
+1. **Criminal Case (FIR + Police Investigation)**
+   - Cost: [e.g., Free for FIR, Lawyer fees if involved]
+2. **Civil Notice (Cease & Desist)**
+   - Lawyer Draft Cost: [Range in ₹]
+3. **[Other Options]**
+   - Cost: [Range in ₹]
+
+### 4. FIRST STEPS IMMEDIATELY AFTER THE INCIDENT
+Step 1: [Action]
+Step 2: [Action]
+Step 3: [Action]
+...
+
+---
+
+**Rules:**
+- Be HIGHLY SPECIFIC to the incident.
+- Suggest REAL SECTIONS (e.g., IPC 379, IT Act 66D).
+- Provide REALISTIC COST ESTIMATES in INR.
+- Include URLs for reporting (e.g., cybercrime.gov.in) if relevant.
 """
 
 # ============================================================================
@@ -233,6 +257,7 @@ POTENTIALLY RELEVANT LEGAL SECTIONS:
 For each relevant section, provide:
 1. Why it applies to this incident
 2. Relevance score (0.0 to 1.0)
+3. Approximate court fees or filing costs (in INR). If criminal/FIR, mention "Free".
 
 Return ONLY a JSON array:
 [
@@ -240,7 +265,8 @@ Return ONLY a JSON array:
     "section_number": "378",
     "act_name": "IPC",
     "relevance_score": 0.9,
-    "reasoning": "This section applies because..."
+    "reasoning": "This section applies because...",
+    "court_fees": "Free (FIR) / ₹2500 approx"
   }}
 ]
 

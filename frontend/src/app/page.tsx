@@ -1,6 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { getUser, logout } from '@/utils/auth'
+import { useRouter } from 'next/navigation'
 
 interface AnalysisResult {
   incident_id: string
@@ -23,6 +25,7 @@ interface AnalysisResult {
     section_description: string
     relevance_score: number
     reasoning: string
+    court_fees?: string
   }>
   required_documents: string[]
   next_steps: string[]
@@ -35,6 +38,12 @@ export default function HomePage() {
   const [showBreathing, setShowBreathing] = useState(false)
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null)
   const [showResults, setShowResults] = useState(false)
+  const [user, setUser] = useState<any>(null)
+  const router = useRouter()
+
+  useEffect(() => {
+    setUser(getUser())
+  }, [])
 
   const handleAnalyze = async () => {
     if (!incidentText.trim() || incidentText.length < 50) {
@@ -88,10 +97,32 @@ export default function HomePage() {
                 <p className="text-xs text-gray-600">Justice Takes Flight</p>
               </div>
             </div>
-            <nav className="hidden md:flex space-x-6">
+            <nav className="hidden md:flex space-x-6 items-center">
               <a href="/" className="text-blue-600 font-semibold">Home</a>
               <a href="/lawyers" className="text-gray-700 hover:text-blue-600 transition">Lawyer Directory</a>
               <a href="/cases" className="text-gray-700 hover:text-blue-600 transition">My Cases</a>
+              
+              {user ? (
+                <div className="flex items-center space-x-3 border-l border-gray-300 pl-4">
+                  <div className="text-right">
+                    <p className="text-sm font-semibold text-blue-600">{user.name || user.email}</p>
+                    <p className="text-xs text-gray-600">Logged in</p>
+                  </div>
+                  <button
+                    onClick={() => logout()}
+                    className="px-4 py-2 bg-red-100 border border-red-300 rounded-lg text-sm text-red-600 hover:bg-red-200 transition"
+                  >
+                    Logout
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => router.push('/login')}
+                  className="px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold rounded-lg hover:shadow-lg transition ml-4"
+                >
+                  Login
+                </button>
+              )}
             </nav>
           </div>
         </div>
@@ -369,7 +400,13 @@ export default function HomePage() {
                         </div>
                         <p className="font-semibold text-gray-800 mb-2">{section.section_title}</p>
                         <p className="text-sm text-gray-600 mb-2">{section.section_description}</p>
-                        <p className="text-sm text-purple-700 italic">{section.reasoning}</p>
+                        <p className="text-sm text-purple-700 italic mb-2">{section.reasoning}</p>
+                        {section.court_fees && (
+                          <div className="mt-2 text-sm text-gray-700 bg-gray-50 p-2 rounded border border-gray-100 flex items-center">
+                            <span className="font-semibold text-gray-900 mr-2">🏛️ Approx Court Fees:</span> 
+                            <span>{section.court_fees}</span>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
