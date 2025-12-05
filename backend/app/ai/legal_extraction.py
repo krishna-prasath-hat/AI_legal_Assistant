@@ -96,7 +96,8 @@ class LegalExtractionEngine:
         self,
         incident_text: str,
         location: Optional[str] = None,
-        incident_date: Optional[str] = None
+        incident_date: Optional[str] = None,
+        police_station_context: str = ""
     ) -> LegalAnalysisResult:
         """
         Analyze an incident and extract legal information
@@ -141,7 +142,8 @@ class LegalExtractionEngine:
             # Step 6 & 7: Generate practical guidance via LLM
             guidance = await self.llm_client.generate_practical_guidance(
                 cleaned_text,
-                classification
+                classification,
+                police_station_context
             )
             
             required_documents = guidance.get('required_documents', [])

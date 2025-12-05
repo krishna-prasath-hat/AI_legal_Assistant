@@ -53,17 +53,36 @@ export default function HomePage() {
     }
 
     setIsAnalyzing(true)
+    
+    // Attempt to detect location for better context (Police Station recommendation)
+    let coords: {lat: number, lng: number} | null = null
+    if ('geolocation' in navigator) {
+       try {
+         const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {timeout: 4000}) 
+         })
+         coords = { lat: pos.coords.latitude, lng: pos.coords.longitude }
+       } catch (e) {
+         console.log("Location detection skipped")
+       }
+    }
 
     try {
+      const payload: any = {
+          incident_text: incidentText,
+          is_anonymous: true
+      }
+      if (coords) {
+          payload.user_lat = coords.lat
+          payload.user_lng = coords.lng
+      }
+
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/legal/analyze`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          incident_text: incidentText,
-          is_anonymous: true
-        })
+        body: JSON.stringify(payload)
       })
 
       if (response.ok) {
@@ -536,7 +555,32 @@ export default function HomePage() {
                   onClick={() => window.print()}
                   className="px-6 py-3 bg-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-300 transition"
                 >
-                  Print
+                  🖨️ Print
+                </button>
+
+                <button
+                  onClick={() => {
+                     const category = analysisResult.classification.offense_category?.toLowerCase() || ''
+                     let practiceArea = ''
+                     if (category.includes('criminal') || category.includes('theft') || category.includes('assault')) practiceArea = 'Criminal Law'
+                     else if (category.includes('civil') || category.includes('property')) practiceArea = 'Civil Law'
+                     else if (category.includes('family') || category.includes('divorce') || category.includes('domestic')) practiceArea = 'Family Law'
+                     else if (category.includes('consumer')) practiceArea = 'Consumer Law'
+                     else if (category.includes('cyber') || category.includes('internet')) practiceArea = 'Cyber Law'
+                     
+                     const cityEntity = analysisResult.entities.find((e: any) => e.entity_type === 'LOCATION')
+                     const city = cityEntity ? cityEntity.entity_value : ''
+                     
+                     const params = new URLSearchParams()
+                     if (practiceArea) params.append('practice_area', practiceArea)
+                     if (city) params.append('city', city)
+                     
+                     router.push(`/lawyers?${params.toString()}`)
+                  }}
+                  className="flex-1 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold rounded-xl hover:shadow-lg transition flex items-center justify-center space-x-2"
+                >
+                  <span className="text-xl">👨‍⚖️</span>
+                  <span>Find Expert Lawyers</span>
                 </button>
               </div>
             </div>

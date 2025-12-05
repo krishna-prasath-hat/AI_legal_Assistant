@@ -193,7 +193,8 @@ class LLMReasoning:
     async def generate_practical_guidance(
         self,
         incident_text: str,
-        classification: IncidentClassification
+        classification: IncidentClassification,
+        police_station_context: str = ""
     ) -> Dict[str, List[str]]:
         """
         Generate practical next steps and required documents
@@ -207,7 +208,8 @@ class LLMReasoning:
                 
             prompt = NEXT_STEPS_PROMPT.format(
                 incident_text=incident_text,
-                classification=f"{classification.offense_type} ({classification.offense_category})"
+                classification=f"{classification.offense_type} ({classification.offense_category})",
+                police_station_context=police_station_context or "User location unknown."
             )
             
             if self.provider == "openai":

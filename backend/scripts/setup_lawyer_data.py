@@ -214,9 +214,67 @@ def add_sample_data():
     
     print("\n🎨 Adding sample practice areas...")
     
-    # Note: SQLite doesn't support UPDATE with random() the same way
-    # This function is simplified for SQLite
-    print("✅ Skipping sample data (can be added manually)")
+    try:
+        engine = create_engine(settings.DATABASE_URL)
+        with engine.connect() as conn:
+            # Check if we have data
+            count = conn.execute(text("SELECT COUNT(*) FROM lawyer_profiles")).scalar()
+            if count == 0:
+                print("⚠️ No data to update.")
+                return
+
+            print(f"Updating {count} records with distributed practice areas...")
+            
+            # Using Modulo arithmetic for fast bulk updates (Pseudo-random distribution)
+            
+            # 1. Criminal & Cyber (20%)
+            conn.execute(text("""
+                UPDATE lawyer_profiles 
+                SET practice_areas = 'Criminal Law, Cyber Law, IPC Specialist',
+                    languages_known = 'English, Hindi, Tamil'
+                WHERE id % 5 = 0;
+            """))
+            
+            # 2. Civil & Property (20%)
+            conn.execute(text("""
+                UPDATE lawyer_profiles 
+                SET practice_areas = 'Civil Law, Property Disputes, Real Estate',
+                    languages_known = 'English, Hindi'
+                WHERE id % 5 = 1;
+            """))
+            
+            # 3. Family & Divorce (20%)
+            conn.execute(text("""
+                UPDATE lawyer_profiles 
+                SET practice_areas = 'Family Law, Divorce, Child Custody',
+                    languages_known = 'English, Tamil'
+                WHERE id % 5 = 2;
+            """))
+            
+            # 4. Corporate & Consumer (20%)
+            conn.execute(text("""
+                UPDATE lawyer_profiles 
+                SET practice_areas = 'Corporate Law, Consumer Law, Banking',
+                    languages_known = 'English, Hindi, Telugu'
+                WHERE id % 5 = 3;
+            """))
+            
+            # 5. Constitutional & General (20%)
+            conn.execute(text("""
+                UPDATE lawyer_profiles 
+                SET practice_areas = 'Constitutional Law, Human Rights, General Practice',
+                    languages_known = 'English, Kannada, Hindi'
+                WHERE id % 5 = 4;
+            """))
+            
+            # Specific Fixes for "Bangalore" vs "Bengaluru" normalization can be done here too if needed
+            # For now, relying on ilike in backend
+            
+            conn.commit()
+            print("✅ Practice areas distributed successfully!")
+            
+    except Exception as e:
+        print(f"❌ Error adding sample data: {e}")
 
 def show_statistics():
     """Show database statistics"""

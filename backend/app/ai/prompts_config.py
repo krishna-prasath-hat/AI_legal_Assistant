@@ -252,8 +252,12 @@ INCIDENT: {incident_text}
 
 CLASSIFICATION: {classification}
 
+CONTEXT: {police_station_context}
+
 TASK:
-1. List 3-5 IMMEDIATE NEXT STEPS based on the specific incident. Be practical and specific (e.g., "Block credit card", "Change passwords").
+1. List 3-5 IMMEDIATE NEXT STEPS based on the specific incident.
+   - CRITICAL: If a police station is named in the CONTEXT, you MUST mention it explicitly in Step 1 (e.g., "File an FIR at [Station Name]").
+   - Be practical and specific (e.g., "Block credit card", "Change passwords").
 2. List REQUIRED DOCUMENTS specific to this case.
 
 OUTPUT FORMAT (JSON ONLY):

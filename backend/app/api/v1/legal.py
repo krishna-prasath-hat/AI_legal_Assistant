@@ -8,6 +8,7 @@ from typing import Optional, List
 from pydantic import BaseModel, Field
 from datetime import datetime
 import logging
+import requests
 
 from app.database import get_db
 from app.core.security import get_current_user
@@ -26,6 +27,8 @@ class AnalyzeIncidentRequest(BaseModel):
     location: Optional[str] = Field(None, description="Location of incident")
     incident_date: Optional[str] = Field(None, description="Date of incident")
     is_anonymous: bool = Field(False, description="Anonymous reporting")
+    user_lat: Optional[float] = Field(None, description="User latitude")
+    user_lng: Optional[float] = Field(None, description="User longitude")
 
 
 class LegalSectionResponse(BaseModel):
@@ -56,6 +59,42 @@ class ClassificationResponse(BaseModel):
     confidence_score: float
     keywords: List[str]
     threat_indicators: List[str]
+
+
+def get_nearest_police_station(lat: float, lng: float) -> str:
+    """Find nearest police station using Nominatim"""
+    try:
+        # Search for 'police' near the coordinates within ~5km
+        # Using a bounded box or just 'q=police' with coords might default to general search
+        # Better: Reverse geocode to get city, then search police in city? No.
+        # Use structured search: q=police+station&lat={lat}&lon={lon}
+        
+        # We will use 'search' with 'q=police' and viewbox?
+        # Actually, simply reverse geocoding to find address is reliable for "Where am I".
+        # But for "Where is police?", we need Points of Interest (POI).
+        
+        # Using Nominatim 'search' with strictly bounded box
+        # 0.05 degrees is approx 5km
+        min_lon, max_lon = lng - 0.05, lng + 0.05
+        min_lat, max_lat = lat - 0.05, lat + 0.05
+        
+        # 'amenity=police' is the OSM tag
+        # https://nominatim.openstreetmap.org/search?format=json&q=police&viewbox=...&bounded=1&limit=1
+        
+        url = f"https://nominatim.openstreetmap.org/search?format=json&q=police+station&viewbox={min_lon},{max_lat},{max_lon},{min_lat}&bounded=1&limit=1"
+        
+        headers = {'User-Agent': 'JustiFly-Legal-App/1.0'}
+        response = requests.get(url, headers=headers, timeout=5)
+        
+        if response.ok:
+            data = response.json()
+            if data and len(data) > 0:
+                return data[0].get('display_name', '').split(',')[0]
+                
+    except Exception as e:
+        logger.warning(f"Failed to find police station: {e}")
+        
+    return ""
 
 
 class AnalysisResponse(BaseModel):
@@ -119,11 +158,21 @@ async def analyze_incident(
         # Get legal extraction engine
         engine = get_legal_extraction_engine()
         
-        # Analyze incident
+        # Detect Nearest Police Station if location provided
+        station_context = ""
+        if request.user_lat and request.user_lng:
+            try:
+                station_name = get_nearest_police_station(request.user_lat, request.user_lng)
+                if station_name:
+                    station_context = f"The nearest police station detected is {station_name}."
+            except Exception as e:
+                logger.warning(f"Police station detection error: {e}")
+
         analysis = await engine.analyze_incident(
             incident_text=request.incident_text,
             location=request.location,
-            incident_date=request.incident_date
+            incident_date=request.incident_date,
+            police_station_context=station_context
         )
         
         # Save to database (simplified - would use proper models)

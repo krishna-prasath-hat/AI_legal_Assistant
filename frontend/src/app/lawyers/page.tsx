@@ -1,8 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
+import dynamic from 'next/dynamic'
 import { isAuthenticated, getUser, logout } from '@/utils/auth'
+
+const LawyerMap = dynamic(() => import('@/components/LawyerMap'), { 
+  ssr: false,
+  loading: () => <div className="h-[450px] w-full rounded-2xl bg-gray-100 animate-pulse flex items-center justify-center">Loading Map...</div>
+})
 
 /**
  * BCI Rule 36 COMPLIANT Lawyer Directory Page
@@ -18,7 +24,7 @@ import { isAuthenticated, getUser, logout } from '@/utils/auth'
  */
 
 interface LawyerProfile {
-  id: string
+  id: number
   full_name: string
   enrollment_number: string
   bar_council_state: string
@@ -35,11 +41,15 @@ interface LawyerProfile {
   law_school?: string
   profile_verified: boolean
   profile_claimed: boolean
+  latitude?: number
+  longitude?: number
 }
 
 interface LocationData {
   city: string
   state: string
+  lat?: number
+  lng?: number
   detected: boolean
 }
 
@@ -60,7 +70,7 @@ export default function LawyersPage() {
     practice_area: '',
     verified_only: false
   })
-  const [sortOrder, setSortOrder] = useState<'name_asc' | 'name_desc'>('name_asc')
+  const [sortOrder, setSortOrder] = useState<'name_asc' | 'name_desc' | 'distance'>('name_asc')
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState(0)
@@ -75,12 +85,28 @@ export default function LawyersPage() {
     }
   }, [router])
 
-  // Detect user location on mount
+  // Detect user location on mount OR read query params
+  const searchParams = useSearchParams()
+
   useEffect(() => {
     if (authChecked) {
-      detectLocation()
+      const practice = searchParams?.get('practice_area')
+      const city = searchParams?.get('city')
+      
+      if (practice || city) {
+        setFilters(prev => ({
+          ...prev,
+          practice_area: practice || prev.practice_area,
+          city: city || prev.city
+        }))
+        // If city provided, we might still want to detect location for lat/lng (for map centering)
+        // But we shouldn't overwrite the city filter.
+        detectLocation(true) // Pass flag to 'onlyDetectLatLng'
+      } else {
+        detectLocation()
+      }
     }
-  }, [authChecked])
+  }, [authChecked, searchParams])
 
   // Don't auto-fetch - only fetch when user clicks Search button
   // Removed auto-fetch on filter change
@@ -97,31 +123,60 @@ export default function LawyersPage() {
     )
   }
 
-  const detectLocation = async () => {
+  const detectLocation = async (onlyDetectLatLng = false) => {
     if ('geolocation' in navigator) {
       try {
         const position = await new Promise<GeolocationPosition>((resolve, reject) => {
           navigator.geolocation.getCurrentPosition(resolve, reject)
         })
 
-        // Reverse geocode to get city/state
+        // Reverse geocode to get city/state using OpenStreetMap (Free, No Key)
         const { latitude, longitude } = position.coords
+        
+        let detectedCity = ''
+        let detectedState = ''
 
-        // Use a geocoding service (you'll need Google Maps API key)
-        // For now, we'll use a simple IP-based location as fallback
-        const response = await fetch(`https://ipapi.co/json/`)
-        const data = await response.json()
+        try {
+          const geoResponse = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`)
+          if (geoResponse.ok) {
+             const geoData = await geoResponse.json()
+             // Nominatim can return city/town/village/county
+             detectedCity = geoData.address.city || geoData.address.town || geoData.address.village || geoData.address.county || ''
+             detectedState = geoData.address.state || ''
+             
+             // Clean up city name (remove " District", etc if needed)
+             detectedCity = detectedCity.replace(' District', '').replace(' City', '')
+          }
+        } catch (e) {
+          console.error("Nominatim geocoding failed, falling back to IP")
+        }
+
+        // Fallback to IP-based if Reverse Geocoding failed
+        if (!detectedCity) {
+           try {
+             const response = await fetch(`https://ipapi.co/json/`)
+             const data = await response.json()
+             detectedCity = data.city || ''
+             detectedState = data.region || ''
+           } catch (e) {
+             console.error("IP Geolocation failed")
+           }
+        }
 
         setLocation({
-          city: data.city || '',
-          state: data.region || '',
+          city: detectedCity,
+          state: detectedState,
+          lat: latitude,
+          lng: longitude,
           detected: true
         })
 
-        setFilters(prev => ({
-          ...prev,
-          city: data.city || ''
-        }))
+        if (!onlyDetectLatLng && detectedCity) {
+          setFilters(prev => ({
+            ...prev,
+            city: detectedCity
+          }))
+        }
       } catch (error) {
         console.log('Location detection failed, user can select manually')
       }
@@ -141,6 +196,12 @@ export default function LawyersPage() {
       if (filters.city) params.append('city', filters.city)
       if (filters.practice_area) params.append('practice_area', filters.practice_area)
       if (filters.verified_only) params.append('verified_only', 'true')
+      
+      // Pass location for map features
+      if (location?.lat && location?.lng) {
+        params.append('user_lat', location.lat.toString())
+        params.append('user_lng', location.lng.toString())
+      }
 
       const response = await fetch(`${API_URL}/api/v1/lawyers/directory?${params}`)
 
@@ -249,9 +310,47 @@ export default function LawyersPage() {
             </div>
           </div>
 
-          {/* Location Detection */}
+          {/* Interactive Map Section */}
+          <div className="mb-8">
+            {location && location.lat && location.lng && (
+               <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-200">
+                  <div className="p-4 border-b border-gray-100 bg-blue-50 flex justify-between items-center">
+                    <h3 className="font-bold text-blue-900 flex items-center">
+                       <span className="mr-2">🗺️</span> Lawyers Near You
+                    </h3>
+                    <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
+                       {location.city} area
+                    </span>
+                  </div>
+                  <div className="p-4">
+                     <LawyerMap 
+                        lawyers={lawyers} 
+                        center={[location.lat, location.lng]} 
+                     />
+                  </div>
+               </div>
+            )}
+            
+            {/* Fallback if no location but user is browsing manually */}
+            {(!location || !location.lat) && (
+                <div className="bg-orange-50 p-4 rounded-xl border border-orange-200 text-center">
+                   <p className="text-orange-800">
+                     📍 Enable Location services or Select "Use Current Location" to see lawyers on the map.
+                   </p>
+                   <button 
+                     onClick={() => detectLocation()}
+                     className="mt-2 text-sm bg-white border border-orange-300 px-3 py-1 rounded hover:bg-orange-100 transition text-orange-700 font-semibold"
+                   >
+                     Enable Location Search
+                   </button>
+                </div>
+            )}
+          </div>
+
+          {/* Location Detection Badge */}
           {location && location.detected && !manualLocation && (
-            <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 mb-6 bg-white">
+            <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 mb-6 bg-white hidden"> 
+               {/* Hidden this old card since map shows location */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className="text-2xl">📍</div>
@@ -322,10 +421,11 @@ export default function LawyersPage() {
                   <select
                     className="p-2 bg-white border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none text-gray-900 text-sm"
                     value={sortOrder}
-                    onChange={(e) => setSortOrder(e.target.value as 'name_asc' | 'name_desc')}
+                    onChange={(e) => setSortOrder(e.target.value as any)}
                   >
                     <option value="name_asc">A → Z</option>
                     <option value="name_desc">Z → A</option>
+                    <option value="distance">📍 Nearest First</option>
                   </select>
                 </div>
                 

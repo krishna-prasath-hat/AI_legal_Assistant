@@ -76,6 +76,13 @@ class LawyerProfileResponse(BaseModel):
     profile_verified: bool = False
     profile_claimed: bool = False
     
+    profile_verified: bool = False
+    profile_claimed: bool = False
+
+    # Location for Map (Mock or Real)
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    
     # Validator to convert comma-separated strings to lists
     @field_validator('practice_areas', 'languages_known', mode='before')
     @classmethod
@@ -124,7 +131,9 @@ async def get_lawyer_directory(
     language: Optional[str] = Query(None, description="Filter by language"),
     gender: Optional[str] = Query(None, description="Filter by gender"),
     verified_only: bool = Query(False, description="Show only verified profiles"),
-    sort: str = Query("name_asc", pattern="^(name_asc|name_desc)$", description="Sort order (alphabetical only)"),
+    user_lat: Optional[float] = Query(None, description="User latitude for nearby search"),
+    user_lng: Optional[float] = Query(None, description="User longitude for nearby search"),
+    sort: str = Query("name_asc", pattern="^(name_asc|name_desc|distance)$", description="Sort order"),
     page: int = Query(1, ge=1, description="Page number"),
     limit: int = Query(20, ge=1, le=50, description="Results per page"),
     db: Session = Depends(get_db)
@@ -139,10 +148,10 @@ async def get_lawyer_directory(
     filters = [LawyerProfile.is_active == True]
     
     if city:
-        filters.append(func.lower(LawyerProfile.city) == func.lower(city))
+        filters.append(LawyerProfile.city.ilike(f"%{city}%"))
     
     if state:
-        filters.append(func.lower(LawyerProfile.state) == func.lower(state))
+        filters.append(LawyerProfile.state.ilike(f"%{state}%"))
     
     if practice_area:
         # Use ilike for text search in comma-separated string
@@ -178,9 +187,56 @@ async def get_lawyer_directory(
     pages = (total + limit - 1) // limit
     
     # Convert to response models
-    lawyer_responses = [
-        LawyerProfileResponse.from_orm(lawyer) for lawyer in lawyers
-    ]
+    # Convert to response models
+    import random
+    
+    # City Center Coords (Approx)
+    CITY_CENTERS = {
+        "bangalore": (12.9716, 77.5946),
+        "bengaluru": (12.9716, 77.5946),
+        "mumbai": (19.0760, 72.8777),
+        "delhi": (28.7041, 77.1025),
+        "new delhi": (28.6139, 77.2090),
+        "chennai": (13.0827, 80.2707),
+        "kolkata": (22.5726, 88.3639),
+        "hyderabad": (17.3850, 78.4867),
+        "pune": (18.5204, 73.8567),
+        "ahmedabad": (23.0225, 72.5714),
+        "jaipur": (26.9124, 75.7873),
+        "surat": (21.1702, 72.8311),
+        "lucknow": (26.8467, 80.9462),
+        "kanpur": (26.4499, 80.3319)
+    }
+
+    lawyer_responses = []
+    for lawyer in lawyers:
+        resp = LawyerProfileResponse.from_orm(lawyer)
+        
+        # Generate Mock Coords for Map Integration
+        # Use user_lat/lng if provided to put them nearby, otherwise use city center
+        base_lat, base_lng = None, None
+        
+        if user_lat and user_lng:
+            base_lat, base_lng = user_lat, user_lng
+        elif lawyer.city and lawyer.city.lower() in CITY_CENTERS:
+            base_lat, base_lng = CITY_CENTERS[lawyer.city.lower()]
+        
+        if base_lat and base_lng:
+            # Add random jitter (approx 1-5km radius)
+            # 0.01 deg is approx 1.1km
+            resp.latitude = base_lat + random.uniform(-0.03, 0.03)
+            resp.longitude = base_lng + random.uniform(-0.03, 0.03)
+            
+        lawyer_responses.append(resp)
+        
+    # Sort by Distance if requested (Client-side relative to page results since it's mock coords)
+    if sort == "distance" and user_lat and user_lng:
+        def calculate_distance(l):
+            if l.latitude and l.longitude:
+                return ((l.latitude - user_lat)**2 + (l.longitude - user_lng)**2)**0.5
+            return float('inf')
+        
+        lawyer_responses.sort(key=calculate_distance)
     
     return LawyerDirectoryResponse(
         lawyers=lawyer_responses,
