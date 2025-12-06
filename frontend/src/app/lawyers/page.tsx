@@ -1,9 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import { isAuthenticated, getUser, logout } from '@/utils/auth'
+import LawyerChatModal from './LawyerChatModal'
+import Header from '@/components/Header'
 
 const LawyerMap = dynamic(() => import('@/components/LawyerMap'), { 
   ssr: false,
@@ -70,60 +72,37 @@ export default function LawyersPage() {
     practice_area: '',
     verified_only: false
   })
+  const [detectingLocation, setDetectingLocation] = useState(false)
   const [sortOrder, setSortOrder] = useState<'name_asc' | 'name_desc' | 'distance'>('name_asc')
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState(0)
 
-  // Check authentication on mount
-  useEffect(() => {
-    if (!isAuthenticated()) {
-      router.push('/login')
-    } else {
-      setUser(getUser())
-      setAuthChecked(true)
-    }
-  }, [router])
-
-  // Detect user location on mount OR read query params
-  const searchParams = useSearchParams()
-
-  useEffect(() => {
-    if (authChecked) {
-      const practice = searchParams?.get('practice_area')
-      const city = searchParams?.get('city')
-      
-      if (practice || city) {
-        setFilters(prev => ({
-          ...prev,
-          practice_area: practice || prev.practice_area,
-          city: city || prev.city
-        }))
-        // If city provided, we might still want to detect location for lat/lng (for map centering)
-        // But we shouldn't overwrite the city filter.
-        detectLocation(true) // Pass flag to 'onlyDetectLatLng'
-      } else {
-        detectLocation()
-      }
-    }
-  }, [authChecked, searchParams])
-
-  // Don't auto-fetch - only fetch when user clicks Search button
-  // Removed auto-fetch on filter change
-
-  // Don't render until auth is checked
-  if (!authChecked) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-6xl mb-4 animate-pulse">⚖️</div>
-          <p className="text-gray-700">Checking authentication...</p>
-        </div>
-      </div>
-    )
+  // New State for Dynamic Location
+  const [manualCityEntry, setManualCityEntry] = useState(false)
+  const lastGeocodedCoords = useRef<{lat: number, lng: number} | null>(null)
+  
+  // Chat Modal State
+  const [selectedLawyer, setSelectedLawyer] = useState<any>(null)
+  const [isChatOpen, setIsChatOpen] = useState(false)
+  
+  // Helper to calculate distance
+  const getDistanceFromLatLonInKm = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371; // Radius of the earth in km
+    const dLat = (lat2 - lat1) * (Math.PI / 180);
+    const dLon = (lon2 - lon1) * (Math.PI / 180);
+    const a = 
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * 
+      Math.sin(dLon / 2) * Math.sin(dLon / 2)
+    ; 
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)); 
+    const d = R * c; // Distance in km
+    return d;
   }
 
   const detectLocation = async (onlyDetectLatLng = false) => {
+    setDetectingLocation(true)
     if ('geolocation' in navigator) {
       try {
         const position = await new Promise<GeolocationPosition>((resolve, reject) => {
@@ -181,7 +160,123 @@ export default function LawyersPage() {
         console.log('Location detection failed, user can select manually')
       }
     }
+    setDetectingLocation(false)
   }
+
+
+
+  // Check authentication on mount
+  // Check authentication on mount and set initial filters from URL
+  const searchParams = useSearchParams()
+  useEffect(() => {
+      // Just set user if logged in, don't redirect guests (Public Directory)
+      if (!isAuthenticated()) {
+         router.push('/login')
+      } else {
+         setUser(getUser())
+         setAuthChecked(true)
+      }
+      
+      // Auto pre-fill from URL params (e.g., from home page incident analysis)
+      const practice = searchParams?.get('practice_area')
+      const city = searchParams?.get('city')
+      
+      if (practice || city) {
+        setFilters(prev => ({
+          ...prev,
+          practice_area: practice || prev.practice_area,
+          city: city || prev.city
+        }))
+        // If city provided, we might still want to detect location for lat/lng (for map centering)
+        // But we shouldn't overwrite the city filter.
+        setManualCityEntry(true) // Treat URL param as manual entry
+        detectLocation(true) // Pass flag to 'onlyDetectLatLng'
+      } else {
+        // No city provided, let the dynamic watcher handle it or trigger an initial detection
+        // checking initially is good for immediate feedback
+        detectLocation()
+      }
+  }, [router, searchParams]) // Removed authChecked from deps to prevent loop
+
+  // Dynamic Location Watcher
+  useEffect(() => {
+    let watchId: number | null = null;
+
+    if (authChecked && !manualCityEntry && 'geolocation' in navigator) {
+      watchId = navigator.geolocation.watchPosition(async (position) => {
+        const { latitude, longitude } = position.coords
+        
+        // Calculate distance from last geocoded point to avoid spamming API
+        if (lastGeocodedCoords.current) {
+          const dist = getDistanceFromLatLonInKm(
+            lastGeocodedCoords.current.lat, 
+            lastGeocodedCoords.current.lng, 
+            latitude, 
+            longitude
+          )
+          // Only re-geocode if moved > 2km
+          if (dist < 2) return; 
+        }
+
+        // Reverse Geocode
+        try {
+          // Update ref immediately to prevent race conditions
+          lastGeocodedCoords.current = { lat: latitude, lng: longitude }
+          
+          const geoResponse = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`)
+          if (geoResponse.ok) {
+             const geoData = await geoResponse.json()
+             let detectedCity = geoData.address.city || geoData.address.town || geoData.address.village || geoData.address.county || ''
+             const detectedState = geoData.address.state || ''
+             detectedCity = detectedCity.replace(' District', '').replace(' City', '')
+
+             if (detectedCity) {
+               setLocation(prev => ({
+                 ...prev,
+                 city: detectedCity,
+                 state: detectedState,
+                 lat: latitude,
+                 lng: longitude,
+                 detected: true
+               }))
+               
+               // Auto-update filter if user hasn't typed manually
+               setFilters(prev => ({ ...prev, city: detectedCity }))
+             }
+          }
+        } catch (e) {
+          console.error("Dynamic location update failed", e)
+        }
+      }, (error) => {
+        console.error("Location watch error", error)
+      }, {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      })
+    }
+
+    return () => {
+      if (watchId !== null) navigator.geolocation.clearWatch(watchId)
+    }
+  }, [authChecked, manualCityEntry])
+
+  // Don't auto-fetch - only fetch when user clicks Search button
+  // Removed auto-fetch on filter change
+
+  // Don't render until auth is checked
+  if (!authChecked) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4 animate-pulse">⚖️</div>
+          <p className="text-gray-700">Checking authentication...</p>
+        </div>
+      </div>
+    )
+  }
+
+
 
   const fetchLawyers = async () => {
     setLoading(true)
@@ -242,43 +337,7 @@ export default function LawyersPage() {
         <div className="absolute bottom-40 right-1/3 text-6xl animate-pulse delay-3000">⚖️</div>
       </div>
 
-      {/* Header */}
-      <header className="border-b border-gray-200 bg-white backdrop-blur-md sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-xl flex items-center justify-center shadow-lg">
-              <span className="text-white font-bold text-2xl">⚖️</span>
-            </div>
-            <div>
-              <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-                JustiFly
-              </h1>
-              <p className="text-xs text-gray-600">Justice Takes Flight</p>
-            </div>
-          </div>
-          <div className="flex items-center space-x-4">
-            <nav className="hidden md:flex space-x-6">
-              <a href="/" className="text-gray-700 hover:text-blue-600 transition">Home</a>
-              <a href="/lawyers" className="text-blue-600 font-semibold">Lawyer Directory</a>
-              <a href="/cases" className="text-gray-700 hover:text-blue-600 transition">My Cases</a>
-            </nav>
-            {user && (
-              <div className="flex items-center space-x-3 border-l border-gray-300 pl-4">
-                <div className="text-right">
-                  <p className="text-sm font-semibold text-blue-600">{user.name || user.email}</p>
-                  <p className="text-xs text-gray-600">Logged in</p>
-                </div>
-                <button
-                  onClick={() => logout()}
-                  className="px-4 py-2 bg-red-100 border border-red-300 rounded-lg text-sm text-red-600 hover:bg-red-200 transition"
-                >
-                  Logout
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </header>
+      <Header />
 
       {/* Main Content */}
       <section className="container mx-auto px-4 py-16 relative z-10">
@@ -394,13 +453,29 @@ export default function LawyersPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-900 mb-2">City</label>
-                <input
-                  type="text"
-                  placeholder="e.g., Bangalore, Mumbai, Delhi"
-                  className="w-full p-3 bg-white border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none text-gray-900 placeholder-gray-400"
-                  value={filters.city}
-                  onChange={(e) => setFilters({ ...filters, city: e.target.value })}
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="e.g., Bangalore, Mumbai, Delhi"
+                    className="w-full p-3 pr-12 bg-white border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none text-gray-900 placeholder-gray-400"
+                    value={filters.city}
+                    onChange={(e) => {
+                       setFilters({ ...filters, city: e.target.value })
+                       setManualCityEntry(true)
+                    }}
+                  />
+                  <button
+                    onClick={() => {
+                       setManualCityEntry(false) // Reset manual flag to allow auto-update
+                       detectLocation() 
+                    }}
+                    disabled={detectingLocation}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-blue-600 transition p-1 disabled:opacity-50"
+                    title="Use my current location"
+                  >
+                    {detectingLocation ? <span className="animate-spin inline-block">↻</span> : '📍'}
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -549,8 +624,15 @@ export default function LawyersPage() {
                   )}
 
                   {/* Contact Button */}
-                  <button className="w-full py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold rounded-lg hover:shadow-lg hover:shadow-blue-500/30 transition">
-                    View Contact Information
+                  <button 
+                    onClick={() => {
+                        setSelectedLawyer(lawyer)
+                        setIsChatOpen(true)
+                    }}
+                    className="w-full py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold rounded-lg hover:shadow-lg hover:shadow-blue-500/30 transition flex items-center justify-center space-x-2"
+                  >
+                    <span>💬</span>
+                    <span>Check Availability</span>
                   </button>
 
                   {/* Individual Disclaimer */}
@@ -611,6 +693,15 @@ export default function LawyersPage() {
         .delay-2000 { animation-delay: 2s; }
         .delay-3000 { animation-delay: 3s; }
       `}</style>
+
+      {/* Chat Modal */}
+      {selectedLawyer && (
+        <LawyerChatModal
+          isOpen={isChatOpen}
+          onClose={() => setIsChatOpen(false)}
+          lawyer={selectedLawyer}
+        />
+      )}
     </div>
   )
 }

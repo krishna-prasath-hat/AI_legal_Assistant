@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { getUser, logout } from '@/utils/auth'
 import { useRouter } from 'next/navigation'
 import ReactMarkdown from 'react-markdown'
+import Header from '@/components/Header'
 
 interface AnalysisResult {
   incident_id: string
@@ -31,6 +32,15 @@ interface AnalysisResult {
   required_documents: string[]
   next_steps: string[]
   ai_summary: string
+  previous_judgments?: Array<{
+    case_title: string
+    case_number: string
+    court: string
+    judgment_date: string
+    summary: string
+    relevance: string
+    url?: string
+  }>
 }
 
 export default function HomePage() {
@@ -104,49 +114,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
-      {/* Header */}
-      <header className="bg-white backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-xl flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-2xl">⚖️</span>
-              </div>
-              <div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">JustiFly</h1>
-                <p className="text-xs text-gray-600">Justice Takes Flight</p>
-              </div>
-            </div>
-            <nav className="hidden md:flex space-x-6 items-center">
-              <a href="/" className="text-blue-600 font-semibold">Home</a>
-              <a href="/lawyers" className="text-gray-700 hover:text-blue-600 transition">Lawyer Directory</a>
-              <a href="/cases" className="text-gray-700 hover:text-blue-600 transition">My Cases</a>
-              
-              {user ? (
-                <div className="flex items-center space-x-3 border-l border-gray-300 pl-4">
-                  <div className="text-right">
-                    <p className="text-sm font-semibold text-blue-600">{user.name || user.email}</p>
-                    <p className="text-xs text-gray-600">Logged in</p>
-                  </div>
-                  <button
-                    onClick={() => logout()}
-                    className="px-4 py-2 bg-red-100 border border-red-300 rounded-lg text-sm text-red-600 hover:bg-red-200 transition"
-                  >
-                    Logout
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => router.push('/login')}
-                  className="px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold rounded-lg hover:shadow-lg transition ml-4"
-                >
-                  Login
-                </button>
-              )}
-            </nav>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       {/* Breathing Exercise Banner */}
       {showBreathing && (
@@ -393,7 +361,26 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* AI Summary */}
+              {/* Next Steps - MOVED TO FIRST */}
+              {analysisResult.next_steps && analysisResult.next_steps.length > 0 && (
+                <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-5">
+                  <h3 className="font-bold text-yellow-900 text-lg mb-3 flex items-center">
+                    <span className="mr-2">✅</span> Recommended Next Steps
+                  </h3>
+                  <ol className="space-y-2">
+                    {analysisResult.next_steps.map((step, idx) => (
+                      <li key={idx} className="flex items-start">
+                        <span className="bg-yellow-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold mr-3 flex-shrink-0 mt-0.5">
+                          {idx + 1}
+                        </span>
+                        <span className="text-gray-700">{step}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
+
+              {/* AI Summary - MOVED TO SECOND */}
               <div className="bg-green-50 border-2 border-green-200 rounded-xl p-5">
                 <h3 className="font-bold text-green-900 text-lg mb-3 flex items-center">
                   <span className="mr-2">🤖</span> AI Analysis Summary
@@ -415,6 +402,54 @@ export default function HomePage() {
                   </ReactMarkdown>
                 </div>
               </div>
+
+              {/* Previous Judgments - NEW SECTION */}
+              {analysisResult.previous_judgments && analysisResult.previous_judgments.length > 0 && (
+                <div className="bg-indigo-50 border-2 border-indigo-200 rounded-xl p-5">
+                  <h3 className="font-bold text-indigo-900 text-lg mb-4 flex items-center">
+                    <span className="mr-2">📚</span> Relevant Previous Judgments
+                  </h3>
+                  <p className="text-sm text-indigo-700 mb-4">
+                    Based on similar cases, here are relevant judgments from Indian courts that may help understand how such cases have been decided:
+                  </p>
+                  <div className="space-y-4">
+                    {analysisResult.previous_judgments.map((judgment, idx) => (
+                      <div key={idx} className="bg-white rounded-lg p-4 border border-indigo-200">
+                        <div className="flex items-start justify-between mb-2">
+                          <h4 className="font-bold text-indigo-900 flex-1">
+                            {judgment.case_title}
+                          </h4>
+                          <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full ml-2 whitespace-nowrap">
+                            {judgment.court}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 text-sm text-gray-600 mb-2">
+                          <span className="font-medium">{judgment.case_number}</span>
+                          <span>•</span>
+                          <span>{judgment.judgment_date}</span>
+                        </div>
+                        <p className="text-sm text-gray-700 mb-2">{judgment.summary}</p>
+                        <p className="text-sm text-indigo-700 italic mb-2">
+                          <strong>Relevance:</strong> {judgment.relevance}
+                        </p>
+                        {judgment.url && (
+                          <a
+                            href={judgment.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1"
+                          >
+                            <span>View Full Judgment</span>
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Legal Sections */}
               {analysisResult.legal_sections && analysisResult.legal_sections.length > 0 && (
@@ -462,25 +497,6 @@ export default function HomePage() {
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
-
-              {/* Next Steps */}
-              {analysisResult.next_steps && analysisResult.next_steps.length > 0 && (
-                <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-5">
-                  <h3 className="font-bold text-yellow-900 text-lg mb-3 flex items-center">
-                    <span className="mr-2">✅</span> Recommended Next Steps
-                  </h3>
-                  <ol className="space-y-2">
-                    {analysisResult.next_steps.map((step, idx) => (
-                      <li key={idx} className="flex items-start">
-                        <span className="bg-yellow-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold mr-3 flex-shrink-0 mt-0.5">
-                          {idx + 1}
-                        </span>
-                        <span className="text-gray-700">{step}</span>
-                      </li>
-                    ))}
-                  </ol>
                 </div>
               )}
 

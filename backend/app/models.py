@@ -180,3 +180,41 @@ class LawyerProfile(Base):
     def address(self):
         return self.office_address
 
+
+class AppointmentStatus(str, enum.Enum):
+    """Appointment status enumeration"""
+    PENDING = "pending"
+    CONFIRMED = "confirmed"
+    COMPLETED = "completed"
+    CANCELLED = "cancelled"
+
+
+class Appointment(Base):
+    """Appointment Model"""
+    __tablename__ = "appointments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    
+    # User info
+    user_id = Column(String(100), index=True, nullable=False)
+    user_name = Column(String(200), nullable=False)
+    user_email = Column(String(200)) # Optional
+    
+    # Lawyer info
+    lawyer_id = Column(Integer, ForeignKey("lawyer_profiles.id"), nullable=False)
+    
+    # Slot info
+    appointment_date = Column(String(50), nullable=False) # Storing as string for simplicity with mock data 'Tomorrow', etc. or proper date
+    slot_time = Column(String(20), nullable=False)
+    appointment_type = Column(String(100), nullable=False)
+    mode = Column(String(50), default="Video Call")
+    
+    status = Column(SQLEnum(AppointmentStatus), default=AppointmentStatus.CONFIRMED.value, nullable=False)
+    
+    notes = Column(Text)
+    
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    lawyer = relationship("LawyerProfile")
+

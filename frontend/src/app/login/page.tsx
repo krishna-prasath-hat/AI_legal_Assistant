@@ -9,7 +9,7 @@ export default function LoginPage() {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    name: '',
+    full_name: '',
     phone: ''
   })
   const [loading, setLoading] = useState(false)
@@ -22,12 +22,16 @@ export default function LoginPage() {
 
     try {
       const endpoint = isLogin ? '/api/v1/auth/login' : '/api/v1/auth/register'
+      const payload = isLogin 
+        ? { email: formData.email, password: formData.password }
+        : { email: formData.email, password: formData.password, full_name: formData.full_name }
+      
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       })
 
       if (response.ok) {
@@ -35,8 +39,8 @@ export default function LoginPage() {
         // Store token
         localStorage.setItem('token', data.access_token)
         localStorage.setItem('user', JSON.stringify(data.user))
-        // Redirect to home
-        router.push('/')
+        // Redirect to home with full page reload to ensure header updates
+        window.location.href = '/'
       } else {
         const error = await response.json()
         setError(error.detail || 'Authentication failed')
@@ -48,7 +52,7 @@ export default function LoginPage() {
       // Create demo user
       const demoUser = {
         id: 'demo-' + Date.now(),
-        name: formData.name || formData.email.split('@')[0],
+        name: formData.full_name || formData.email.split('@')[0],
         email: formData.email,
         phone: formData.phone
       }
@@ -57,8 +61,8 @@ export default function LoginPage() {
       localStorage.setItem('token', 'demo-token-' + Date.now())
       localStorage.setItem('user', JSON.stringify(demoUser))
 
-      // Redirect to home
-      router.push('/')
+      // Redirect to home with full page reload to ensure header updates
+      window.location.href = '/'
     } finally {
       setLoading(false)
     }
@@ -124,8 +128,8 @@ export default function LoginPage() {
                   required
                   className="w-full p-3 bg-white border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:outline-none text-gray-900 placeholder-gray-400"
                   placeholder="John Doe"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  value={formData.full_name}
+                  onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
                 />
               </div>
             )}

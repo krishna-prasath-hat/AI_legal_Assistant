@@ -19,11 +19,13 @@ try:
         ACTIVE_PROMPT,
         FIR_DRAFT_PROMPT,
         SECTION_REFINEMENT_PROMPT,
-        NEXT_STEPS_PROMPT
+        NEXT_STEPS_PROMPT,
+        CLIENT_INTAKE_PROMPT
     )
 except ImportError:
     # Fallback if prompts_config doesn't exist
     LEGAL_ANALYSIS_PROMPT = None
+    CLIENT_INTAKE_PROMPT = None
     ACTIVE_PROMPT = "DEFAULT"
 
 logger = logging.getLogger(__name__)
@@ -232,6 +234,82 @@ class LLMReasoning:
         except Exception as e:
             logger.error(f"Practical guidance generation failed: {e}")
             return {"next_steps": [], "required_documents": []}
+
+    async def analyze_client_intake(
+        self,
+        chat_history: List[Dict[str, str]]
+    ) -> Dict[str, Any]:
+        """
+        Analyze client intake answers to determine severity and summary.
+        
+        Args:
+            chat_history: List of messages [{"role": "user", "content": "..."}, ...]
+        
+        Returns:
+            JSON dict with severity_score (1-10), urgency_level (High/Medium/Low), brief_summary, recommended_slot_type
+        """
+        if self.provider == "fallback":
+            return {
+                "severity_score": 5, 
+                "urgency_level": "Medium", 
+                "brief_summary": "Consultation request", 
+                "recommended_slot_type": "standard"
+            }
+            
+        try:
+            conversation_text = "\n".join([f"{msg['role'].upper()}: {msg['content']}" for msg in chat_history])
+            
+            prompt = f"""You are a legal intake assistant. Analyze the following potential client screening conversation:
+            
+{conversation_text}
+
+Determine:
+1. Legal Issue Severity (1-10)
+2. Urgency Level (High: Immediate/24hrs, Medium: Within week, Low: Routine)
+3. One sentence summary of the case.
+4. Recommended appointment type (Emergency, Consultation, Routine)
+
+Return ONLY JSON:
+{{
+  "severity_score": 8,
+  "urgency_level": "High",
+  "brief_summary": "Accused of theft, received notice.",
+  "recommended_slot_type": "Emergency"
+}}
+"""
+            # Use configured prompt if available
+            if CLIENT_INTAKE_PROMPT:
+                prompt = CLIENT_INTAKE_PROMPT.format(conversation_text=conversation_text)
+
+            if self.provider == "openai":
+                response = await self._call_openai(prompt)
+            elif self.provider == "groq":
+                response = await self._call_groq(prompt)
+            else:
+                response = await self._call_google(prompt)
+                
+            # Parse JSON
+            try:
+                json_start = response.find('{')
+                json_end = response.rfind('}') + 1
+                json_str = response[json_start:json_end]
+                return json.loads(json_str)
+            except Exception:
+                return {
+                    "severity_score": 5, 
+                    "urgency_level": "Medium", 
+                    "brief_summary": "Analysis failed, defaulting to standard consultation.", 
+                    "recommended_slot_type": "standard"
+                }
+                
+        except Exception as e:
+            logger.error(f"Client intake analysis failed: {e}")
+            return {
+                "severity_score": 5, 
+                "urgency_level": "Medium", 
+                "brief_summary": "Error in analysis.", 
+                "recommended_slot_type": "standard"
+            }
     
     def _create_section_refinement_prompt(
         self,

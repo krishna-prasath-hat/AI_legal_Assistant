@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { isAuthenticated, getUser, logout } from '@/utils/auth'
+import Header from '@/components/Header'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
@@ -224,43 +225,7 @@ export default function CasesPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
-      {/* Header */}
-      <header className="bg-white backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-xl flex items-center justify-center shadow-lg">
-              <span className="text-white font-bold text-2xl">⚖️</span>
-            </div>
-            <div>
-              <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-                JustiFly
-              </h1>
-              <p className="text-xs text-gray-600">Justice Takes Flight</p>
-            </div>
-          </div>
-          <div className="flex items-center space-x-4">
-            <nav className="hidden md:flex space-x-6">
-              <a href="/" className="text-gray-700 hover:text-blue-600 transition">Home</a>
-              <a href="/lawyers" className="text-gray-700 hover:text-blue-600 transition">Lawyer Directory</a>
-              <a href="/cases" className="text-blue-600 font-semibold">My Cases</a>
-            </nav>
-            {user && (
-              <div className="flex items-center space-x-3 border-l border-gray-300 pl-4">
-                <div className="text-right">
-                  <p className="text-sm font-semibold text-blue-600">{user.name || user.email}</p>
-                  <p className="text-xs text-gray-600">Logged in</p>
-                </div>
-                <button
-                  onClick={() => logout()}
-                  className="px-4 py-2 bg-red-100 border border-red-300 rounded-lg text-sm text-red-600 hover:bg-red-200 transition"
-                >
-                  Logout
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </header>
+      <Header />
 
       {/* Main Content */}
       <section className="container mx-auto px-4 py-16">
