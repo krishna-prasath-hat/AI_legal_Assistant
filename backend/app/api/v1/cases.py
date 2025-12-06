@@ -11,7 +11,7 @@ import logging
 import uuid
 
 from app.database import get_db
-from app.models import Case, CaseUpdate, CaseDocument, CaseStatus, CaseType
+from app.models import Case, CaseUpdate, CaseDocument, CaseStatus, CaseType, CaseFollowUp, FollowUpType, FollowUpStatus
 
 logger = logging.getLogger(__name__)
 
@@ -82,6 +82,63 @@ class CaseListResponse(BaseModel):
     total: int
     page: int
     pages: int
+
+
+class CaseFollowUpCreate(BaseModel):
+    """Request model for creating a case follow-up"""
+    title: str = Field(..., min_length=5, max_length=300)
+    description: Optional[str] = None
+    followup_type: FollowUpType
+    scheduled_date: str  # Will be converted to datetime
+    court_name: Optional[str] = None
+    judge_name: Optional[str] = None
+    hearing_type: Optional[str] = None
+    case_number: Optional[str] = None
+    location: Optional[str] = None
+    room_number: Optional[str] = None
+
+
+class CaseFollowUpUpdate(BaseModel):
+    """Request model for updating a case follow-up"""
+    title: Optional[str] = None
+    description: Optional[str] = None
+    status: Optional[FollowUpStatus] = None
+    scheduled_date: Optional[str] = None
+    completed_date: Optional[str] = None
+    court_name: Optional[str] = None
+    judge_name: Optional[str] = None
+    hearing_type: Optional[str] = None
+    location: Optional[str] = None
+    room_number: Optional[str] = None
+    outcome: Optional[str] = None
+    next_steps: Optional[str] = None
+
+
+class CaseFollowUpResponse(BaseModel):
+    """Response model for a case follow-up"""
+    id: int
+    case_id: int
+    title: str
+    description: Optional[str]
+    followup_type: str
+    status: str
+    scheduled_date: datetime
+    completed_date: Optional[datetime]
+    court_name: Optional[str]
+    judge_name: Optional[str]
+    hearing_type: Optional[str]
+    case_number: Optional[str]
+    location: Optional[str]
+    room_number: Optional[str]
+    outcome: Optional[str]
+    next_steps: Optional[str]
+    created_by_name: str
+    created_by_role: str
+    created_at: datetime
+    updated_at: datetime
+    
+    class Config:
+        from_attributes = True
 
 
 # Helper function to get current user (simplified - replace with actual auth)
@@ -470,3 +527,390 @@ async def delete_case(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete case"
         )
+
+
+# ============================================================================
+# FOLLOW-UP ENDPOINTS
+# ============================================================================
+
+@router.post("/{case_id}/followups", response_model=CaseFollowUpResponse, status_code=status.HTTP_201_CREATED)
+async def create_followup(
+    case_id: int,
+    followup_data: CaseFollowUpCreate,
+    db: Session = Depends(get_db)
+):
+    """
+    Create a new follow-up for a case
+    
+    Args:
+        case_id: Case ID
+        followup_data: Follow-up creation data
+        db: Database session
+        
+    Returns:
+        Created follow-up
+    """
+    try:
+        user = get_current_user_simple()
+        
+        # Verify case exists and user has access
+        case = db.query(Case).filter(
+            Case.id == case_id,
+            Case.user_id == user["id"]
+        ).first()
+        
+        if not case:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Case not found"
+            )
+        
+        # Parse scheduled_date
+        scheduled_datetime = None
+        if followup_data.scheduled_date:
+            try:
+                scheduled_datetime = datetime.fromisoformat(followup_data.scheduled_date.replace('Z', '+00:00'))
+            except:
+                try:
+                    from dateutil import parser
+                    scheduled_datetime = parser.parse(followup_data.scheduled_date)
+                except:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Invalid scheduled_date format"
+                    )
+        
+        # Create follow-up
+        new_followup = CaseFollowUp(
+            case_id=case_id,
+            title=followup_data.title,
+            description=followup_data.description,
+            followup_type=followup_data.followup_type,
+            scheduled_date=scheduled_datetime,
+            court_name=followup_data.court_name,
+            judge_name=followup_data.judge_name,
+            hearing_type=followup_data.hearing_type,
+            case_number=followup_data.case_number,
+            location=followup_data.location,
+            room_number=followup_data.room_number,
+            created_by_id=user["id"],
+            created_by_name=user["name"],
+            created_by_role=user["role"]
+        )
+        
+        db.add(new_followup)
+        
+        # Update case's next_hearing_date if this is a hearing
+        if followup_data.followup_type in [FollowUpType.HEARING, FollowUpType.COURT_DATE]:
+            if not case.next_hearing_date or scheduled_datetime < case.next_hearing_date:
+                case.next_hearing_date = scheduled_datetime
+                if followup_data.court_name:
+                    case.court_name = followup_data.court_name
+        
+        case.updated_at = datetime.utcnow()
+        
+        db.commit()
+        db.refresh(new_followup)
+        
+        logger.info(f"Follow-up created for case {case.case_number}")
+        
+        return new_followup
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error creating follow-up: {e}")
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create follow-up"
+        )
+
+
+@router.get("/{case_id}/followups", response_model=List[CaseFollowUpResponse])
+async def get_case_followups(
+    case_id: int,
+    status_filter: Optional[FollowUpStatus] = None,
+    upcoming_only: bool = False,
+    db: Session = Depends(get_db)
+):
+    """
+    Get all follow-ups for a case
+    
+    Args:
+        case_id: Case ID
+        status_filter: Filter by status
+        upcoming_only: Only return upcoming follow-ups
+        db: Database session
+        
+    Returns:
+        List of follow-ups
+    """
+    try:
+        user = get_current_user_simple()
+        
+        # Verify case exists and user has access
+        case = db.query(Case).filter(
+            Case.id == case_id,
+            Case.user_id == user["id"]
+        ).first()
+        
+        if not case:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Case not found"
+            )
+        
+        query = db.query(CaseFollowUp).filter(CaseFollowUp.case_id == case_id)
+        
+        if status_filter:
+            query = query.filter(CaseFollowUp.status == status_filter)
+        
+        if upcoming_only:
+            query = query.filter(
+                CaseFollowUp.scheduled_date >= datetime.utcnow(),
+                CaseFollowUp.status == FollowUpStatus.SCHEDULED
+            )
+        
+        followups = query.order_by(CaseFollowUp.scheduled_date.asc()).all()
+        
+        return followups
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching follow-ups: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch follow-ups"
+        )
+
+
+@router.get("/{case_id}/followups/{followup_id}", response_model=CaseFollowUpResponse)
+async def get_followup(
+    case_id: int,
+    followup_id: int,
+    db: Session = Depends(get_db)
+):
+    """
+    Get a specific follow-up
+    
+    Args:
+        case_id: Case ID
+        followup_id: Follow-up ID
+        db: Database session
+        
+    Returns:
+        Follow-up details
+    """
+    try:
+        user = get_current_user_simple()
+        
+        # Verify case exists and user has access
+        case = db.query(Case).filter(
+            Case.id == case_id,
+            Case.user_id == user["id"]
+        ).first()
+        
+        if not case:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Case not found"
+            )
+        
+        followup = db.query(CaseFollowUp).filter(
+            CaseFollowUp.id == followup_id,
+            CaseFollowUp.case_id == case_id
+        ).first()
+        
+        if not followup:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Follow-up not found"
+            )
+        
+        return followup
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching follow-up: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch follow-up"
+        )
+
+
+@router.put("/{case_id}/followups/{followup_id}", response_model=CaseFollowUpResponse)
+async def update_followup(
+    case_id: int,
+    followup_id: int,
+    followup_data: CaseFollowUpUpdate,
+    db: Session = Depends(get_db)
+):
+    """
+    Update a follow-up
+    
+    Args:
+        case_id: Case ID
+        followup_id: Follow-up ID
+        followup_data: Update data
+        db: Database session
+        
+    Returns:
+        Updated follow-up
+    """
+    try:
+        user = get_current_user_simple()
+        
+        # Verify case exists and user has access
+        case = db.query(Case).filter(
+            Case.id == case_id,
+            Case.user_id == user["id"]
+        ).first()
+        
+        if not case:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Case not found"
+            )
+        
+        followup = db.query(CaseFollowUp).filter(
+            CaseFollowUp.id == followup_id,
+            CaseFollowUp.case_id == case_id
+        ).first()
+        
+        if not followup:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Follow-up not found"
+            )
+        
+        # Update fields
+        if followup_data.title is not None:
+            followup.title = followup_data.title
+        if followup_data.description is not None:
+            followup.description = followup_data.description
+        if followup_data.status is not None:
+            followup.status = followup_data.status
+            if followup_data.status == FollowUpStatus.COMPLETED and not followup.completed_date:
+                followup.completed_date = datetime.utcnow()
+        if followup_data.court_name is not None:
+            followup.court_name = followup_data.court_name
+        if followup_data.judge_name is not None:
+            followup.judge_name = followup_data.judge_name
+        if followup_data.hearing_type is not None:
+            followup.hearing_type = followup_data.hearing_type
+        if followup_data.location is not None:
+            followup.location = followup_data.location
+        if followup_data.room_number is not None:
+            followup.room_number = followup_data.room_number
+        if followup_data.outcome is not None:
+            followup.outcome = followup_data.outcome
+        if followup_data.next_steps is not None:
+            followup.next_steps = followup_data.next_steps
+        
+        if followup_data.scheduled_date is not None:
+            try:
+                followup.scheduled_date = datetime.fromisoformat(followup_data.scheduled_date.replace('Z', '+00:00'))
+            except:
+                try:
+                    from dateutil import parser
+                    followup.scheduled_date = parser.parse(followup_data.scheduled_date)
+                except:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Invalid scheduled_date format"
+                    )
+        
+        if followup_data.completed_date is not None:
+            try:
+                followup.completed_date = datetime.fromisoformat(followup_data.completed_date.replace('Z', '+00:00'))
+            except:
+                try:
+                    from dateutil import parser
+                    followup.completed_date = parser.parse(followup_data.completed_date)
+                except:
+                    pass
+        
+        followup.updated_at = datetime.utcnow()
+        case.updated_at = datetime.utcnow()
+        
+        db.commit()
+        db.refresh(followup)
+        
+        logger.info(f"Follow-up {followup_id} updated")
+        
+        return followup
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating follow-up: {e}")
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update follow-up"
+        )
+
+
+@router.delete("/{case_id}/followups/{followup_id}")
+async def delete_followup(
+    case_id: int,
+    followup_id: int,
+    db: Session = Depends(get_db)
+):
+    """
+    Delete a follow-up
+    
+    Args:
+        case_id: Case ID
+        followup_id: Follow-up ID
+        db: Database session
+        
+    Returns:
+        Success message
+    """
+    try:
+        user = get_current_user_simple()
+        
+        # Verify case exists and user has access
+        case = db.query(Case).filter(
+            Case.id == case_id,
+            Case.user_id == user["id"]
+        ).first()
+        
+        if not case:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Case not found"
+            )
+        
+        followup = db.query(CaseFollowUp).filter(
+            CaseFollowUp.id == followup_id,
+            CaseFollowUp.case_id == case_id
+        ).first()
+        
+        if not followup:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Follow-up not found"
+            )
+        
+        db.delete(followup)
+        db.commit()
+        
+        logger.info(f"Follow-up {followup_id} deleted")
+        
+        return {"message": "Follow-up deleted successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting follow-up: {e}")
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete follow-up"
+        )
+

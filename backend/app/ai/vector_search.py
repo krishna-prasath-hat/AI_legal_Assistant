@@ -136,23 +136,14 @@ class VectorSearch:
         Returns:
             List of fallback sections
         """
-        # Common IPC sections by offense type
+        # Common BNS sections by offense type (Updated from IPC)
         fallback_data = {
             "theft": [
                 {
-                    "act_name": "IPC",
-                    "section_number": "378",
+                    "act_name": "BNS",
+                    "section_number": "303(2)",
                     "section_title": "Theft",
-                    "section_description": "Whoever, intending to take dishonestly any movable property out of the possession of any person without that person's consent, moves that property in order to such taking, is said to commit theft.",
-                    "is_cognizable": True,
-                    "is_bailable": False,
-                    "punishment_description": "Imprisonment up to 3 years or fine or both"
-                },
-                {
-                    "act_name": "IPC",
-                    "section_number": "379",
-                    "section_title": "Punishment for theft",
-                    "section_description": "Whoever commits theft shall be punished with imprisonment of either description for a term which may extend to three years, or with fine, or with both.",
+                    "section_description": "Whoever commits theft shall be punished with imprisonment of either description for a term which may extend to three years, or with fine, or with both. For subsequent conviction, imprisonment provided.",
                     "is_cognizable": True,
                     "is_bailable": False,
                     "punishment_description": "Imprisonment up to 3 years or fine or both"
@@ -160,10 +151,10 @@ class VectorSearch:
             ],
             "fraud": [
                 {
-                    "act_name": "IPC",
-                    "section_number": "420",
+                    "act_name": "BNS",
+                    "section_number": "318(4)",
                     "section_title": "Cheating and dishonestly inducing delivery of property",
-                    "section_description": "Whoever cheats and thereby dishonestly induces the person deceived to deliver any property to any person, or to make, alter or destroy the whole or any part of a valuable security, or anything which is signed or sealed, and which is capable of being converted into a valuable security, shall be punished with imprisonment of either description for a term which may extend to seven years, and shall also be liable to fine.",
+                    "section_description": "Whoever cheats and thereby dishonestly induces the person deceived to deliver any property to any person, or to make, alter or destroy the whole or any part of a valuable security, shall be punished with imprisonment which may extend to seven years, and shall also be liable to fine.",
                     "is_cognizable": True,
                     "is_bailable": False,
                     "punishment_description": "Imprisonment up to 7 years and fine"
@@ -171,19 +162,19 @@ class VectorSearch:
             ],
             "assault": [
                 {
-                    "act_name": "IPC",
-                    "section_number": "323",
-                    "section_title": "Punishment for voluntarily causing hurt",
-                    "section_description": "Whoever, except in the case provided for by section 334, voluntarily causes hurt, shall be punished with imprisonment of either description for a term which may extend to one year, or with fine which may extend to one thousand rupees, or with both.",
+                    "act_name": "BNS",
+                    "section_number": "115(2)",
+                    "section_title": "Voluntarily causing hurt",
+                    "section_description": "Whoever voluntarily causes hurt, shall be punished with imprisonment of either description for a term which may extend to one year, or with fine which may extend to ten thousand rupees, or with both.",
                     "is_cognizable": True,
                     "is_bailable": True,
-                    "punishment_description": "Imprisonment up to 1 year or fine up to Rs. 1000 or both"
+                    "punishment_description": "Imprisonment up to 1 year or fine up to Rs. 10,000 or both"
                 },
                 {
-                    "act_name": "IPC",
-                    "section_number": "325",
-                    "section_title": "Punishment for voluntarily causing grievous hurt",
-                    "section_description": "Whoever, except in the case provided for by section 335, voluntarily causes grievous hurt, shall be punished with imprisonment of either description for a term which may extend to seven years, and shall also be liable to fine.",
+                    "act_name": "BNS",
+                    "section_number": "117(2)",
+                    "section_title": "Voluntarily causing grievous hurt",
+                    "section_description": "Whoever voluntarily causes grievous hurt, shall be punished with imprisonment of either description for a term which may extend to seven years, and shall also be liable to fine.",
                     "is_cognizable": True,
                     "is_bailable": False,
                     "punishment_description": "Imprisonment up to 7 years and fine"
@@ -211,17 +202,17 @@ class VectorSearch:
             ],
             "harassment": [
                 {
-                    "act_name": "IPC",
-                    "section_number": "354",
+                    "act_name": "BNS",
+                    "section_number": "74",
                     "section_title": "Assault or criminal force to woman with intent to outrage her modesty",
-                    "section_description": "Whoever assaults or uses criminal force to any woman, intending to outrage or knowing it to be likely that he will thereby outrage her modesty, shall be punished with imprisonment of either description for a term which shall not be less than one year but which may extend to five years, and shall also be liable to fine.",
+                    "section_description": "Whoever assaults or uses criminal force to any woman, intending to outrage or knowing it to be likely that he will thereby outrage her modesty, shall be punished with imprisonment which shall not be less than one year but which may extend to five years, and shall also be liable to fine.",
                     "is_cognizable": True,
                     "is_bailable": False,
                     "punishment_description": "Imprisonment 1-5 years and fine"
                 },
                 {
-                    "act_name": "IPC",
-                    "section_number": "509",
+                    "act_name": "BNS",
+                    "section_number": "79",
                     "section_title": "Word, gesture or act intended to insult the modesty of a woman",
                     "section_description": "Whoever, intending to insult the modesty of any woman, utters any word, makes any sound or gesture, or exhibits any object, intending that such word or sound shall be heard, or that such gesture or object shall be seen, by such woman, or intrudes upon the privacy of such woman, shall be punished with simple imprisonment for a term which may extend to three years, and also with fine.",
                     "is_cognizable": True,

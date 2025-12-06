@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { isAuthenticated, getUser, logout } from '@/utils/auth'
+import { Scale, Search, Construction, Check } from 'lucide-react'
 
 export default function TrackerPage() {
   const router = useRouter()
@@ -22,7 +23,7 @@ export default function TrackerPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-6xl mb-4 animate-pulse">⚖️</div>
+          <div className="flex justify-center mb-4"><Scale className="w-16 h-16 text-gray-400 animate-pulse" /></div>
           <p className="text-gray-300">Checking authentication...</p>
         </div>
       </div>
@@ -35,7 +36,7 @@ export default function TrackerPage() {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="w-12 h-12 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center shadow-lg">
-              <span className="text-white font-bold text-2xl">⚖️</span>
+              <Scale className="text-white w-7 h-7" />
             </div>
             <div>
               <h1 className="text-xl font-bold bg-gradient-to-r from-amber-200 via-yellow-200 to-amber-300 bg-clip-text text-transparent">
@@ -72,7 +73,7 @@ export default function TrackerPage() {
       <section className="container mx-auto px-4 py-16">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-8">
-            <div className="text-6xl mb-4">🔍</div>
+            <div className="flex justify-center mb-4"><Search className="w-16 h-16 text-amber-200" /></div>
             <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-400 bg-clip-text text-transparent">
               Track Case
             </h2>
@@ -82,17 +83,17 @@ export default function TrackerPage() {
           </div>
 
           <div className="bg-white/10 backdrop-blur-md rounded-2xl shadow-2xl p-8 border border-white/20 text-center">
-            <div className="text-5xl mb-4">🚧</div>
+            <div className="flex justify-center mb-4"><Construction className="w-16 h-16 text-amber-500" /></div>
             <h3 className="text-2xl font-bold text-amber-200 mb-3">Coming Soon</h3>
             <p className="text-gray-400 mb-6">
               This feature is under development. You'll be able to:
             </p>
             <ul className="text-left max-w-md mx-auto space-y-2 text-gray-300">
-              <li>✅ Track case status in real-time</li>
-              <li>✅ View hearing dates and updates</li>
-              <li>✅ Get notifications for important events</li>
-              <li>✅ Access court orders and judgments</li>
-              <li>✅ Monitor case timeline</li>
+              <li className="flex items-center gap-2"><Check className="text-green-500 w-4 h-4" /> Track case status in real-time</li>
+              <li className="flex items-center gap-2"><Check className="text-green-500 w-4 h-4" /> View hearing dates and updates</li>
+              <li className="flex items-center gap-2"><Check className="text-green-500 w-4 h-4" /> Get notifications for important events</li>
+              <li className="flex items-center gap-2"><Check className="text-green-500 w-4 h-4" /> Access court orders and judgments</li>
+              <li className="flex items-center gap-2"><Check className="text-green-500 w-4 h-4" /> Monitor case timeline</li>
             </ul>
           </div>
         </div>

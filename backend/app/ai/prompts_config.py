@@ -11,7 +11,7 @@ INSTRUCTIONS:
 # MAIN ANALYSIS PROMPT - This is sent to ChatGPT for incident analysis
 # ============================================================================
 
-# LEGAL_ANALYSIS_PROMPT = """You are an expert Indian legal advisor with deep knowledge of IPC, CrPC, IT Act, Consumer Protection Act, and other Indian laws.
+# LEGAL_ANALYSIS_PROMPT = """You are an expert Indian legal advisor with deep knowledge of BNS (Bharatiya Nyaya Sanhita), BNSS (Bharatiya Nagarik Suraksha Sanhita), IT Act, Consumer Protection Act, and other Indian laws.
 
 # INCIDENT DESCRIPTION:
 # {incident_text}
@@ -38,8 +38,8 @@ INSTRUCTIONS:
    
 #    Examples:
 #    - For cyber fraud: IT Act Section 66D (Cheating by personation using computer resource)
-#    - For document issues: IPC Section 420 (Cheating), Section 467 (Forgery of valuable security)
-#    - For theft: IPC Section 378 (Theft), Section 379 (Punishment for theft)
+#    - For document issues: BNS Section 318 (Cheating), Section 336 (Forgery)
+#    - For theft: BNS Section 303 (Theft)
 
 # 3. LEGAL SUMMARY
 #    Write 2-3 paragraphs explaining:
@@ -110,49 +110,42 @@ INCIDENT DESCRIPTION:
 {incident_text}
 
 YOUR TASK:
-Analyze the incident and generate a structured report in the EXACT format below. Use Markdown.
+First, VALIDATE if the incident description is a valid legal scenario or query related to Indian Law.
+- If the input is a general conversation (e.g., "what is my name", "hello", "tell me a joke"), or nonsense, or completely unrelated to law:
+  STOP immediately. Do not generate a legal report.
+  Return EXACTLY this message:
+  "I am an AI Legal Assistant designed to help with Indian legal matters and specific incidents. I cannot assist with general conversation of personal queries. Please describe a legal situation you need help with."
+
+- If the input is a valid legal scenario, analyze the incident and generate a STRUCTURED, CONCISE report in the EXACT format below. Use Markdown.
 
 ---
 
 ### 1. APPLICABLE LAWS
-**IPC (Indian Penal Code)**
-- **Section [Number] – [Offense Name]**
-  [Explanation of why it applies]
-- [Repeat for other sections]
+**BNS (Bharatiya Nyaya Sanhita)**
+- **Section [Number]**: [Brief explanation]
 
-**IT Act (Information Technology Act, 2000)** (If applicable)
-- **Section [Number] – [Offense Name]**
-  [Explanation]
-
-**CrPC (Procedure)**
-- [Relevant procedures, e.g., Filing FIR]
+**IT Act** (If applicable)
+- **Section [Number]**: [Brief explanation]
 
 ### 2. CIVIL REMEDIES (Optional)
-- **[Remedy Name]** (e.g., Cease & Desist Notice)
-  [Explanation of how it helps]
+- **[Remedy Name]**: [Brief explanation]
 
 ### 3. COURT OPTIONS & APPROX COSTS
-Provide realistic Indian market estimates:
-1. **Criminal Case (FIR + Police Investigation)**
-   - Cost: [e.g., Free for FIR, Lawyer fees if involved]
-2. **Civil Notice (Cease & Desist)**
-   - Lawyer Draft Cost: [Range in ₹]
-3. **[Other Options]**
-   - Cost: [Range in ₹]
+1. **Criminal Case (FIR)**: [Cost]
+2. **Civil Notice**: [Cost]
 
-### 4. FIRST STEPS IMMEDIATELY AFTER THE INCIDENT
-Step 1: [Action]
-Step 2: [Action]
-Step 3: [Action]
-...
+### 4. FIRST STEPS (Immediate Actions)
+1. [Action 1]
+2. [Action 2]
+3. [Action 3]
 
 ---
 
 **Rules:**
-- Be HIGHLY SPECIFIC to the incident.
-- Suggest REAL SECTIONS (e.g., IPC 379, IT Act 66D).
+- **CRITICAL: Keep the entire response concise (approx 10-15 lines total).**
+- Use bullet points for brevity.
+- Suggest REAL SECTIONS (BNS/IT Act).
 - Provide REALISTIC COST ESTIMATES in INR.
-- Include URLs for reporting (e.g., cybercrime.gov.in) if relevant.
 """
 
 # ============================================================================
@@ -165,11 +158,11 @@ SIMPLE_ANALYSIS_PROMPT = """Analyze this legal incident in India:
 
 Provide:
 1. What type of crime/issue is this?
-2. Which Indian laws apply? (IPC sections, IT Act, etc.)
+2. Which Indian laws apply? (BNS sections, IT Act, etc.)
 3. What should the person do immediately?
 4. What documents are needed?
 
-Keep it brief and practical."""
+If the input is not a legal incident, politely refuse to answer."""
 
 # ============================================================================
 # CUSTOM PROMPT TEMPLATE (Design your own format)
@@ -230,14 +223,15 @@ PROVIDED LEGAL SECTIONS (Reference Only):
 {legal_sections}
 
 INSTRUCTIONS:
-1. Subject Line: Create a specific subject line mentioning the offense type (e.g., "Complaint regarding Theft of Mobile Phone and Cyber Harassment"). Do NOT use "general" unless absolutely necessary.
-2. Applicable Sections: If the 'PROVIDED LEGAL SECTIONS' list is empty, generic, or insufficient, YOU MUST DETERMINE the relevant IPC/IT Act sections based on the incident description and cite them in the request for action.
-3. Content: Draft a professional, detailed complaint addressed to the Station House Officer (SHO).
-4. Structure:
+1. VALIDATE INPUT: If the 'INCIDENT DESCRIPTION' is not a valid legal scenario (e.g. "hello", "what is my name"), DO NOT DRAFT AN FIR. Instead return: "Cannot draft FIR: valid incident details required."
+2. Subject Line: Create a specific subject line mentioning the offense type (e.g., "Complaint regarding Theft of Mobile Phone and Cyber Harassment"). Do NOT use "general" unless absolutely necessary.
+3. Applicable Sections: If the 'PROVIDED LEGAL SECTIONS' list is empty, generic, or insufficient, YOU MUST DETERMINE the relevant BNS/IT Act sections based on the incident description and cite them in the request for action.
+4. Content: Draft a professional, detailed complaint addressed to the Station House Officer (SHO).
+5. Structure:
    - To Address
    - Subject
    - Body (Incident details, specific allegations)
-   - Request for Action (Cite specific laws like IPC 379, IT Act 66, etc.)
+   - Request for Action (Cite specific laws like BNS 303, IT Act 66, etc.)
    - Conclusion (Signature block)
 
 Use formal legal language appropriate for Indian police stations."""
@@ -255,10 +249,11 @@ CLASSIFICATION: {classification}
 CONTEXT: {police_station_context}
 
 TASK:
-1. List 3-5 IMMEDIATE NEXT STEPS based on the specific incident.
+1. VALIDATE INPUT: If the INCIDENT is not a valid legal scenario (e.g. "what is my name"), return empty arrays for both "next_steps" and "required_documents".
+2. List 3-5 IMMEDIATE NEXT STEPS based on the specific incident.
    - CRITICAL: If a police station is named in the CONTEXT, you MUST mention it explicitly in Step 1 (e.g., "File an FIR at [Station Name]").
    - Be practical and specific (e.g., "Block credit card", "Change passwords").
-2. List REQUIRED DOCUMENTS specific to this case.
+3. List REQUIRED DOCUMENTS specific to this case.
 
 OUTPUT FORMAT (JSON ONLY):
 {{
@@ -292,11 +287,13 @@ For each relevant section, provide:
 2. Relevance score (0.0 to 1.0)
 3. Approximate court fees or filing costs (in INR). If criminal/FIR, mention "Free".
 
+CRITICAL: If the INCIDENT is not a legal matter or is clearly invalid/nonsense, return an empty array [].
+
 Return ONLY a JSON array:
 [
   {{
-    "section_number": "378",
-    "act_name": "IPC",
+    "section_number": "303",
+    "act_name": "BNS",
     "relevance_score": 0.9,
     "reasoning": "This section applies because...",
     "court_fees": "Free (FIR) / ₹2500 approx"

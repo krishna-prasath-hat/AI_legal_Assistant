@@ -52,25 +52,25 @@ class LawyerProfileResponse(BaseModel):
     """
     id: int
     
-    # ✅ ALLOWED: Basic Identification
+    # ALLOWED: Basic Identification
     full_name: str
     enrollment_number: Optional[str] = None
     bar_council_state: Optional[str] = None
     enrollment_date: Optional[datetime] = None
     
-    # ✅ ALLOWED: Contact Information
+    # ALLOWED: Contact Information
     email: Optional[str] = None
     phone: Optional[str] = None
     office_address: Optional[str] = None
     city: Optional[str] = None
     state: Optional[str] = None
     
-    # ✅ ALLOWED: Professional Information (Factual Only)
+    # ALLOWED: Professional Information (Factual Only)
     practice_areas: List[str] = []
     courts_practicing_in: Optional[str] = None
     languages_known: List[str] = ["English"]
     
-    # ✅ ALLOWED: Academic Qualifications
+    # ALLOWED: Academic Qualifications
     law_degree: Optional[str] = None
     law_school: Optional[str] = None
     
@@ -217,7 +217,7 @@ async def get_lawyer_directory(
     # Base query with filters
     query = db.query(LawyerProfile).filter(and_(*filters))
     
-    # ✅ COMPLIANCE: Alphabetical sorting ONLY
+    # COMPLIANCE: Alphabetical sorting ONLY
     if sort == "name_desc":
         query = query.order_by(func.lower(LawyerProfile.full_name).desc())
     else:  # default: name_asc

@@ -6,6 +6,22 @@ import dynamic from 'next/dynamic'
 import { isAuthenticated, getUser, logout } from '@/utils/auth'
 import LawyerChatModal from './LawyerChatModal'
 import Header from '@/components/Header'
+import { 
+  Scale, 
+  ClipboardList, 
+  Map, 
+  MapPin, 
+  Loader, 
+  Folder, 
+  Download, 
+  MessageSquare, 
+  Info, 
+  Check, 
+  Users, 
+  AlertTriangle, 
+  Search, 
+  Globe 
+} from 'lucide-react'
 
 const LawyerMap = dynamic(() => import('@/components/LawyerMap'), { 
   ssr: false,
@@ -269,7 +285,7 @@ export default function LawyersPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-6xl mb-4 animate-pulse">⚖️</div>
+          <div className="flex justify-center mb-4"><Scale className="w-16 h-16 text-gray-400 animate-pulse" /></div>
           <p className="text-gray-700">Checking authentication...</p>
         </div>
       </div>
@@ -331,10 +347,10 @@ export default function LawyersPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 relative overflow-hidden">
       {/* Animated Justice Scales Background */}
       <div className="absolute inset-0 overflow-hidden opacity-10">
-        <div className="absolute top-20 left-10 text-9xl animate-pulse">⚖️</div>
-        <div className="absolute top-40 right-20 text-7xl animate-pulse delay-1000">⚖️</div>
-        <div className="absolute bottom-20 left-1/4 text-8xl animate-pulse delay-2000">⚖️</div>
-        <div className="absolute bottom-40 right-1/3 text-6xl animate-pulse delay-3000">⚖️</div>
+        <div className="absolute top-20 left-10 text-gray-200 animate-pulse"><Scale size={120} /></div>
+        <div className="absolute top-40 right-20 text-gray-200 animate-pulse delay-1000"><Scale size={90} /></div>
+        <div className="absolute bottom-20 left-1/4 text-gray-200 animate-pulse delay-2000"><Scale size={100} /></div>
+        <div className="absolute bottom-40 right-1/3 text-gray-200 animate-pulse delay-3000"><Scale size={80} /></div>
       </div>
 
       <Header />
@@ -344,7 +360,7 @@ export default function LawyersPage() {
         <div className="max-w-6xl mx-auto">
           {/* Page Title */}
           <div className="text-center mb-8">
-            <div className="text-6xl mb-4">📋</div>
+            <div className="flex justify-center mb-4"><ClipboardList className="w-16 h-16 text-blue-600" /></div>
             <h2 className="text-4xl md:text-5xl font-bold mb-4 text-gray-900">
               Lawyer Directory
             </h2>
@@ -359,7 +375,7 @@ export default function LawyersPage() {
           {/* Compliance Disclaimer (Prominent) */}
           <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 mb-8 bg-white">
             <div className="flex items-start space-x-3">
-              <div className="text-2xl">⚠️</div>
+              <div className="bg-blue-100 p-2 rounded-full"><AlertTriangle className="w-6 h-6 text-blue-600" /></div>
               <div className="flex-1">
                 <h3 className="text-blue-600 font-bold mb-2">Important Disclaimer</h3>
                 <p className="text-sm text-gray-700 leading-relaxed">
@@ -375,7 +391,7 @@ export default function LawyersPage() {
                <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-200">
                   <div className="p-4 border-b border-gray-100 bg-blue-50 flex justify-between items-center">
                     <h3 className="font-bold text-blue-900 flex items-center">
-                       <span className="mr-2">🗺️</span> Lawyers Near You
+                       <span className="mr-2"><Map className="w-5 h-5 inline" /></span> Lawyers Near You
                     </h3>
                     <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
                        {location.city} area
@@ -394,7 +410,7 @@ export default function LawyersPage() {
             {(!location || !location.lat) && (
                 <div className="bg-orange-50 p-4 rounded-xl border border-orange-200 text-center">
                    <p className="text-orange-800">
-                     📍 Enable Location services or Select "Use Current Location" to see lawyers on the map.
+                      <MapPin className="w-4 h-4 inline mr-1" /> Enable Location services or Select "Use Current Location" to see lawyers on the map.
                    </p>
                    <button 
                      onClick={() => detectLocation()}
@@ -473,7 +489,7 @@ export default function LawyersPage() {
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-blue-600 transition p-1 disabled:opacity-50"
                     title="Use my current location"
                   >
-                    {detectingLocation ? <span className="animate-spin inline-block">↻</span> : '📍'}
+                    {detectingLocation ? <Loader className="animate-spin w-4 h-4" /> : <MapPin className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
@@ -500,7 +516,7 @@ export default function LawyersPage() {
                   >
                     <option value="name_asc">A → Z</option>
                     <option value="name_desc">Z → A</option>
-                    <option value="distance">📍 Nearest First</option>
+                    <option value="distance">Nearest First</option>
                   </select>
                 </div>
                 
@@ -509,7 +525,7 @@ export default function LawyersPage() {
                   onClick={() => fetchLawyers()}
                   className="px-6 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold rounded-lg hover:shadow-lg transition"
                 >
-                  🔍 Search
+                  <Search className="w-4 h-4 mr-2" /> Search
                 </button>
               </div>
             </div>
@@ -527,18 +543,18 @@ export default function LawyersPage() {
           {/* Lawyer Cards (BCI COMPLIANT) */}
           {loading ? (
             <div className="text-center py-12">
-              <div className="text-4xl mb-4">⏳</div>
+              <div className="flex justify-center mb-4"><Loader className="w-10 h-10 animate-spin text-blue-500" /></div>
               <p className="text-gray-600">Loading directory...</p>
             </div>
           ) : lawyers.length === 0 ? (
             <div className="text-center py-12 bg-white rounded-2xl border border-gray-200">
-              <div className="text-6xl mb-4">📂</div>
+              <div className="flex justify-center mb-4"><Folder className="w-16 h-16 text-gray-300" /></div>
               <h3 className="text-2xl font-bold text-blue-600 mb-3">No Lawyer Data Available</h3>
               <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
                 The lawyer directory is empty. To populate it with real data:
               </p>
               <div className="bg-slate-800/50 rounded-lg p-6 max-w-2xl mx-auto text-left">
-                <h4 className="text-blue-600 font-bold mb-3">📥 Import Lawyer Data:</h4>
+                <h4 className="text-blue-600 font-bold mb-3 flex items-center gap-2"><Download className="w-4 h-4" /> Import Lawyer Data:</h4>
                 <ol className="text-sm text-gray-700 space-y-2 list-decimal list-inside">
                   <li>Download CSV from: <a href="https://data.gov.in/catalog/all-india-advocate-list" target="_blank" className="text-blue-300 underline">data.gov.in</a></li>
                   <li>Save as: <code className="bg-slate-900 px-2 py-1 rounded text-blue-600">backend/scripts/advocates_data.csv</code></li>
@@ -564,7 +580,7 @@ export default function LawyersPage() {
                     </div>
                     {lawyer.profile_verified && (
                       <div className="flex items-center space-x-1 bg-cyan-50 px-3 py-1 rounded-full border border-cyan-200">
-                        <span className="text-cyan-600 font-bold">✓</span>
+                        <Check className="w-3 h-3 text-cyan-600" />
                         <span className="text-xs font-semibold text-cyan-700">Verified</span>
                       </div>
                     )}
@@ -631,7 +647,7 @@ export default function LawyersPage() {
                     }}
                     className="w-full py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold rounded-lg hover:shadow-lg hover:shadow-blue-500/30 transition flex items-center justify-center space-x-2"
                   >
-                    <span>💬</span>
+                    <span><MessageSquare className="w-4 h-4" /></span>
                     <span>Check Availability</span>
                   </button>
 
@@ -670,7 +686,7 @@ export default function LawyersPage() {
           {/* Bottom Disclaimer */}
           <div className="mt-12 p-6 bg-slate-800/50 border border-slate-700 rounded-xl">
             <h4 className="text-blue-600 font-bold mb-3 flex items-center">
-              <span className="mr-2">ℹ️</span>
+              <span className="mr-2"><Info className="w-5 h-5" /></span>
               How to Use This Directory
             </h4>
             <ul className="text-sm text-gray-700 space-y-2 list-disc list-inside">

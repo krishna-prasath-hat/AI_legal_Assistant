@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { Scale, ArrowRight } from 'lucide-react'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -72,8 +73,8 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex items-center justify-center px-4">
       {/* Background */}
       <div className="absolute inset-0 overflow-hidden opacity-10">
-        <div className="absolute top-20 left-10 text-9xl animate-pulse">⚖️</div>
-        <div className="absolute bottom-20 right-20 text-7xl animate-pulse delay-1000">⚖️</div>
+        <div className="absolute top-20 left-10 text-gray-200 animate-pulse"><Scale size={120} /></div>
+        <div className="absolute bottom-20 right-20 text-gray-200 animate-pulse delay-1000"><Scale size={90} /></div>
       </div>
 
       {/* Login/Signup Card */}
@@ -81,10 +82,14 @@ export default function LoginPage() {
         <div className="bg-white border border-gray-200 rounded-2xl shadow-2xl p-8">
           {/* Logo */}
           <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-              <span className="text-white font-bold text-3xl">⚖️</span>
+            <div className="flex justify-center mb-4">
+              <img 
+                src="/justifly-icon.png" 
+                alt="JustiFly" 
+                className="h-20 w-20 object-contain"
+              />
             </div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+            <h1 className="text-3xl font-bold text-gray-900">
               JustiFly
             </h1>
             <p className="text-gray-600 text-sm mt-2">Justice Takes Flight</p>

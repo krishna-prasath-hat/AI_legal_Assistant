@@ -311,6 +311,64 @@ Return ONLY JSON:
                 "recommended_slot_type": "standard"
             }
     
+    async def generate_relevant_judgments(
+        self,
+        incident_text: str,
+        offense_type: str,
+        legal_sections: List[Dict[str, str]]
+    ) -> List[Dict[str, Any]]:
+        """Generate relevant judgments dynamically using LLM"""
+        if self.provider == "fallback":
+            return []
+
+        try:
+            # Format sections
+            sections_str = ", ".join([f"{s.get('act_name')} {s.get('section_number')}" for s in legal_sections])
+            
+            prompt = f"""You are a legal research assistant accessing the eCourts and Indian Kanoon database.
+            
+            Incident: {incident_text}
+            Offense: {offense_type}
+            Sections: {sections_str}
+            
+            Retrieve 3 relevant precedent judgments (Case Laws) from Indian Courts (Supreme Court or High Courts).
+            Focus on cases with similar facts or legal questions.
+            
+            Return specific, real cases known in your training data.
+            
+            Return ONLY a JSON array:
+            [
+              {{
+                "case_title": "State vs. Example",
+                "case_number": "Criminal Appeal 123/2018",
+                "court": "Supreme Court of India",
+                "judgment_date": "25-Jan-2019",
+                "summary": "Brief summary of the holding...",
+                "relevance": "Why this applies...",
+                "url": "https://indiankanoon.org/doc/123456/" 
+              }}
+            ]"""
+
+            if self.provider == "openai":
+                response = await self._call_openai(prompt)
+            elif self.provider == "groq":
+                response = await self._call_groq(prompt)
+            else:
+                response = await self._call_google(prompt)
+
+            # Parse JSON
+            try:
+                json_start = response.find('[')
+                json_end = response.rfind(']') + 1
+                json_str = response[json_start:json_end]
+                return json.loads(json_str)
+            except Exception:
+                return []
+                
+        except Exception as e:
+            logger.error(f"Judgment generation failed: {e}")
+            return []
+
     def _create_section_refinement_prompt(
         self,
         incident_text: str,
@@ -334,25 +392,28 @@ Return ONLY JSON:
             )
             
         return f"""You are a legal expert analyzing an incident under Indian law.
+IMPORTANT: The Indian Penal Code (IPC) has been replaced by the Bharatiya Nyaya Sanhita (BNS) 2023, effective July 1, 2024.
+If the incident implies a recent date or is general, suggest BNS sections alongside or instead of IPC.
 
 Incident: {incident_text}
 
 Classification: {classification.offense_type} ({classification.offense_category})
 Severity: {classification.severity_level}
 
-Potentially relevant legal sections:
+Potentially relevant sections found in DB (mostly IPC/Old):
 {sections_text}
 
-For each relevant section, provide:
-1. Why it applies to this incident
-2. Relevance score (0.0 to 1.0)
-3. Approximate court fees (in INR)
+Task:
+1. VALIDATE INPUT: If the "Incident" is not a valid legal scenario (e.g. "what is my name"), return an empty array [].
+2. Select the most relevant sections. 
+3. IF an IPC section is selected (e.g., IPC 379), ALSO provide the corresponding BNS section (e.g., BNS 303) if applicable.
+4. Provide approximate court fees.
 
 Return ONLY a JSON array with this structure:
 [
   {{
-    "section_number": "378",
-    "act_name": "IPC",
+    "section_number": "303(2) (BNS) / 379 (IPC)",
+    "act_name": "BNS/IPC",
     "relevance_score": 0.9,
     "reasoning": "This section applies because...",
     "court_fees": "Free / ₹5000"
@@ -405,7 +466,11 @@ Offense Type: {classification.offense_type}
 Category: {classification.offense_category}
 Severity: {classification.severity_level}
 
-Write a clear, professional summary explaining:
+IMPORTANT:
+If the "Incident" is not a valid legal scenario (e.g. "hello", "what is my name"), DO NOT ANALYZE.
+Instead, strictly reply: "I am an AI Legal Assistant designed to help with Indian legal matters. I cannot assist with general conversation. Please describe a legal situation."
+
+If it is valid, write a clear, professional summary explaining:
 1. What legal violations occurred
 2. Which laws apply and why
 3. Potential legal consequences
@@ -462,7 +527,7 @@ Use formal legal language appropriate for Indian police stations."""
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[
-                    {"role": "system", "content": "You are a legal expert specializing in Indian law."},
+                    {"role": "system", "content": "You are a legal expert specializing in Indian law (BNS/BNSS). You must ONLY answer questions related to Indian legal matters. If the user asks personal questions, general knowledge questions, or anything unrelated to law, you must politely refuse and redirect them to legal topics. Do not Hallucinate details."},
                     {"role": "user", "content": prompt}
                 ],
                 temperature=0.3,
@@ -479,7 +544,7 @@ Use formal legal language appropriate for Indian police stations."""
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[
-                    {"role": "system", "content": "You are a legal expert specializing in Indian law."},
+                    {"role": "system", "content": "You are a legal expert specializing in Indian law (BNS/BNSS). You must ONLY answer questions related to Indian legal matters. If the user asks personal questions, general knowledge questions, or anything unrelated to law, you must politely refuse and redirect them to legal topics. Do not Hallucinate details."},
                     {"role": "user", "content": prompt}
                 ],
                 temperature=0.3,

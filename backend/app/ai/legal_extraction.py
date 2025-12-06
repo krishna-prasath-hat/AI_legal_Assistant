@@ -138,23 +138,35 @@ class LegalExtractionEngine:
                 classification,
                 legal_sections
             )
-            
-            # Step 6 & 7: Generate practical guidance via LLM
-            guidance = await self.llm_client.generate_practical_guidance(
-                cleaned_text,
-                classification,
-                police_station_context
-            )
-            
-            required_documents = guidance.get('required_documents', [])
-            next_steps = guidance.get('next_steps', [])
-            
-            # Fallback to rule-based if LLM extraction failed
-            if not required_documents:
-                required_documents = self._get_required_documents(classification, legal_sections)
-            
-            if not next_steps:
-                next_steps = self._generate_next_steps(classification, legal_sections)
+
+            # CHECK FOR REFUSAL: If AI refuses, clear all other fields
+            # Use a specific phrase that only appears in refusal, not in polite intros
+            refusal_marker = "I cannot assist with general conversation"
+            if refusal_marker in ai_summary:
+                logger.info("AI refused to analyze non-legal query")
+                legal_sections = []
+                required_documents = []
+                next_steps = []
+                # Mark classification as invalid to prevent downstream judgment search
+                classification.offense_type = "non-legal"
+                classification.offense_category = "invalid"
+            else:
+                # Step 6 & 7: Generate practical guidance via LLM (Only if valid)
+                guidance = await self.llm_client.generate_practical_guidance(
+                    cleaned_text,
+                    classification,
+                    police_station_context
+                )
+                
+                required_documents = guidance.get('required_documents', [])
+                next_steps = guidance.get('next_steps', [])
+                
+                # Fallback to rule-based if LLM extraction failed
+                if not required_documents:
+                    required_documents = self._get_required_documents(classification, legal_sections)
+                
+                if not next_steps:
+                    next_steps = self._generate_next_steps(classification, legal_sections)
             
             return LegalAnalysisResult(
                 classification=classification,
@@ -401,7 +413,7 @@ class LegalExtractionEngine:
         
         # Add severity-based steps
         if classification.severity_level in ["high", "critical"]:
-            steps.insert(0, "⚠️ This is a serious matter - seek immediate legal assistance")
+            steps.insert(0, "[URGENT] This is a serious matter - seek immediate legal assistance")
             
             if any(indicator in classification.threat_indicators 
                    for indicator in ["violence", "threat", "harassment"]):

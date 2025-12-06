@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { getUser, isAuthenticated, logout } from '@/utils/auth'
 import Link from 'next/link'
-import { User, LogOut, Calendar, Menu, ChevronDown } from 'lucide-react'
+import { User, LogOut, Calendar, Menu, ChevronDown, Video, MapPin } from 'lucide-react'
 
 export default function Header() {
   const router = useRouter()
@@ -91,11 +91,13 @@ export default function Header() {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-3 cursor-pointer">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-xl flex items-center justify-center shadow-lg">
-              <span className="text-white font-bold text-2xl">⚖️</span>
-            </div>
+            <img 
+              src="/justifly-icon.png" 
+              alt="JustiFly" 
+              className="h-12 w-12 object-contain"
+            />
             <div>
-              <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+              <h1 className="text-xl font-bold text-gray-900">
                 JustiFly
               </h1>
               <p className="text-xs text-gray-600">Justice Takes Flight</p>
@@ -186,8 +188,8 @@ export default function Header() {
                                                       <span>{apt.slot_time}</span>
                                                   </p>
                                               </div>
-                                              <span className="text-[10px] bg-white border border-gray-200 px-1.5 py-0.5 rounded text-gray-500">
-                                                  {apt.mode === 'Video Call' ? '📹' : '📍'}
+                                              <span className="text-[10px] bg-white border border-gray-200 px-1.5 py-0.5 rounded text-gray-500 flex items-center gap-1">
+                                                  {apt.mode === 'Video Call' ? <Video size={10} /> : <MapPin size={10} />}
                                               </span>
                                           </div>
                                       </div>

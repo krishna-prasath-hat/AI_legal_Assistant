@@ -74,6 +74,7 @@ class Case(Base):
     # Relationships
     updates = relationship("CaseUpdate", back_populates="case", cascade="all, delete-orphan")
     documents = relationship("CaseDocument", back_populates="case", cascade="all, delete-orphan")
+    followups = relationship("CaseFollowUp", back_populates="case", cascade="all, delete-orphan")
 
 
 class CaseUpdate(Base):
@@ -126,6 +127,72 @@ class CaseDocument(Base):
     
     # Relationship
     case = relationship("Case", back_populates="documents")
+
+
+class FollowUpType(str, enum.Enum):
+    """Follow-up type enumeration"""
+    HEARING = "hearing"
+    COURT_DATE = "court_date"
+    DOCUMENT_SUBMISSION = "document_submission"
+    LAWYER_MEETING = "lawyer_meeting"
+    EVIDENCE_COLLECTION = "evidence_collection"
+    WITNESS_INTERVIEW = "witness_interview"
+    OTHER = "other"
+
+
+class FollowUpStatus(str, enum.Enum):
+    """Follow-up status enumeration"""
+    SCHEDULED = "scheduled"
+    COMPLETED = "completed"
+    POSTPONED = "postponed"
+    CANCELLED = "cancelled"
+
+
+class CaseFollowUp(Base):
+    """Case Follow-up Model for tracking hearings and other events"""
+    __tablename__ = "case_followups"
+
+    id = Column(Integer, primary_key=True, index=True)
+    case_id = Column(Integer, ForeignKey("cases.id"), nullable=False)
+    
+    # Follow-up details
+    title = Column(String(300), nullable=False)
+    description = Column(Text)
+    followup_type = Column(SQLEnum(FollowUpType), nullable=False)
+    status = Column(SQLEnum(FollowUpStatus), default=FollowUpStatus.SCHEDULED, nullable=False)
+    
+    # Date and time
+    scheduled_date = Column(DateTime, nullable=False)
+    completed_date = Column(DateTime)
+    
+    # Hearing-specific fields
+    court_name = Column(String(300))
+    judge_name = Column(String(200))
+    hearing_type = Column(String(100))  # preliminary, final, evidence, arguments, etc.
+    case_number = Column(String(100))  # Court case number
+    
+    # Location
+    location = Column(String(500))
+    room_number = Column(String(50))
+    
+    # Outcome and notes
+    outcome = Column(Text)  # Result of the hearing/meeting
+    next_steps = Column(Text)  # What needs to be done next
+    
+    # Reminders
+    reminder_sent = Column(Boolean, default=False)
+    
+    # Who created
+    created_by_id = Column(String(100), nullable=False)
+    created_by_name = Column(String(200), nullable=False)
+    created_by_role = Column(String(50), nullable=False)
+    
+    # Metadata
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    
+    # Relationship
+    case = relationship("Case", back_populates="followups")
 
 
 class LawyerProfile(Base):
